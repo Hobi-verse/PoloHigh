@@ -25,7 +25,7 @@ const PORT = process.env.PORT || 4000;
 
 //middleware - Enable CORS for frontend communication
 app.use(cors({
-  origin:'https://polo-high.vercel.app' | "http://localhost:5173",
+  origin:'https://polo-high.vercel.app',
   credentials: true,
 }));
 app.use(express.json({ limit: "10mb" }));
