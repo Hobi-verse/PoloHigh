@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 
 const baseStyles =
-  "inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-100 transition hover:border-emerald-300/60 hover:bg-emerald-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300";
-
+  "inline-flex h-10 w-10 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-secondary hover:text-text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+  
 const IconButton = ({ icon, label, to, href, onClick, className = "" }) => {
   const renderIcon = () => {
     if (typeof icon === "function") {

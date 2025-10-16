@@ -105,33 +105,33 @@ const Login = () => {
       helperText: "Use the password you created during registration.",
       render: ({ value = "", setValue, inputClasses }) => (
         <div className="space-y-2">
-          <label
-            htmlFor="login-password"
-            className="block text-sm font-medium text-emerald-100"
-          >
-            Password
-          </label>
-          <div className="relative">
-            <input
-              id="login-password"
-              name="password"
-              type={isPasswordVisible ? "text" : "password"}
-              placeholder="Enter the Password"
-              value={value}
-              onChange={(event) => setValue(event.target.value)}
-              className={`${inputClasses} pr-24`}
-              required
-              autoComplete="current-password"
-            />
-            <button
-              type="button"
-              onClick={() => setIsPasswordVisible((previous) => !previous)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-wide text-emerald-200/80"
-            >
-              {isPasswordVisible ? "Hide" : "Show"}
-            </button>
-          </div>
-        </div>
+  <label
+    htmlFor="login-password"
+    className="block text-sm font-medium text-text-base"
+  >
+    Password
+  </label>
+  <div className="relative">
+    <input
+      id="login-password"
+      name="password"
+      type={isPasswordVisible ? "text" : "password"}
+      placeholder="Enter the Password"
+      value={value}
+      onChange={(event) => setValue(event.target.value)}
+      className={`${inputClasses} pr-24`} // Uses the redesigned input classes
+      required
+      autoComplete="current-password"
+    />
+    <button
+      type="button"
+      onClick={() => setIsPasswordVisible((previous) => !previous)}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-wide text-text-muted transition-colors hover:text-primary"
+    >
+      {isPasswordVisible ? "Hide" : "Show"}
+    </button>
+  </div>
+</div>
       ),
     },
   ];

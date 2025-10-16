@@ -293,28 +293,28 @@ const ProductReviewsSummary = ({
 
     return (
       <button
-        key={value}
-        type="button"
-        onClick={() => toggleRatingFilter(value)}
-        className={`group flex items-center gap-3 rounded-2xl border px-3 py-2 text-left transition ${
-          isActive
-            ? "border-emerald-300/70 bg-emerald-500/10"
-            : "border-white/5 bg-white/5 hover:border-emerald-200/40"
-        }`}
-      >
-        <span className="w-8 text-sm font-semibold text-emerald-100">
-          {value}★
-        </span>
-        <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-white/10">
-          <span
-            className="absolute inset-y-0 left-0 rounded-full bg-emerald-400/60 transition-all group-hover:bg-emerald-300/80"
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
-        <span className="w-12 text-right text-xs text-emerald-200/70">
-          {count}
-        </span>
-      </button>
+  key={value}
+  type="button"
+  onClick={() => toggleRatingFilter(value)}
+  className={`group flex items-center gap-3 rounded-2xl border px-3 py-2 text-left transition ${
+    isActive
+      ? "border-primary/70 bg-primary/10"
+      : "border-secondary/20 bg-secondary hover:border-primary/40"
+  }`}
+>
+  <span className="w-8 text-sm font-semibold text-text-base">
+    {value}★
+  </span>
+  <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-background">
+    <span
+      className="absolute inset-y-0 left-0 rounded-full bg-primary/60 transition-all group-hover:bg-primary/80"
+      style={{ width: `${percentage}%` }}
+    />
+  </div>
+  <span className="w-12 text-right text-xs text-text-muted">
+    {count}
+  </span>
+</button>
     );
   };
 
@@ -322,31 +322,31 @@ const ProductReviewsSummary = ({
     <section className="rounded-3xl border border-white/5 bg-white/5 p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/60">
-              Customer Reviews
-            </p>
-            <h2 className="text-xl font-semibold text-white md:text-2xl">
-              Hear it from the community
-            </h2>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-emerald-200/80">
-            <RatingDisplay
-              rating={summary.averageRating}
-              size="lg"
-              showCount={false}
-            />
-            <span>
-              {averageRatingLabel} out of 5 stars ({totalReviewsLabel} reviews)
-            </span>
-          </div>
+  <div>
+    <p className="text-xs uppercase tracking-[0.2em] text-text-muted">
+      Customer Reviews
+    </p>
+    <h2 className="text-xl font-semibold text-text-base md:text-2xl">
+      Hear it from the community
+    </h2>
+  </div>
+  <div className="flex flex-wrap items-center gap-3 text-sm text-text-base/80">
+    <RatingDisplay
+      rating={summary.averageRating}
+      size="lg"
+      showCount={false}
+    />
+    <span>
+      {averageRatingLabel} out of 5 stars ({totalReviewsLabel} reviews)
+    </span>
+  </div>
         </div>
         <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end">
           {eligibility?.existingReview ? (
             <button
               type="button"
               onClick={() => onRequestReview?.("edit")}
-              className="inline-flex items-center justify-center rounded-full border border-emerald-300/60 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100 transition hover:border-emerald-200"
+              className="inline-flex items-center justify-center rounded-full border border-primary/60 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.3em] text-text-base transition hover:border-primary"
             >
               Edit your review
             </button>
@@ -354,7 +354,7 @@ const ProductReviewsSummary = ({
           <button
             type="button"
             onClick={() => onRequestReview?.("create")}
-            className="inline-flex items-center justify-center rounded-full bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-emerald-950 shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-400"
+            className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-background shadow-lg shadow-primary/30 transition hover:opacity-90"
           >
             Write a review
           </button>
@@ -362,181 +362,181 @@ const ProductReviewsSummary = ({
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,0.45fr)_minmax(0,1fr)]">
-        <div className="space-y-3 rounded-3xl border border-white/5 bg-[#0c1f18] p-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-semibold text-emerald-100">
-                Rating breakdown
-              </p>
-              <p className="text-xs text-emerald-200/60">
-                Tap to filter by rating
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={toggleVerifiedFilter}
-              className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] transition ${
-                verifiedOnly
-                  ? "border-emerald-300/80 text-emerald-100"
-                  : "border-white/10 text-emerald-200/60 hover:border-emerald-200/40"
-              }`}
-            >
-              {verifiedOnly ? "Verified only" : "All reviews"}
-            </button>
-          </div>
-          <div className="space-y-2">
-            {distributionKeys.map((value) => renderRatingBar(value))}
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          {loading && !hasAnyReviews ? (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="animate-pulse rounded-3xl border border-white/5 bg-[#0d221c] p-5"
-                >
-                  <div className="mb-4 h-4 w-1/3 rounded bg-white/10" />
-                  <div className="mb-2 h-4 rounded bg-white/10" />
-                  <div className="h-16 rounded bg-white/10" />
-                </div>
-              ))}
-            </div>
-          ) : null}
-
-          {!loading && error ? (
-            <div className="space-y-3 rounded-3xl border border-rose-300/40 bg-rose-500/10 p-5 text-sm text-rose-100">
-              <p>{error}</p>
-              <button
-                type="button"
-                onClick={() => loadReviews({ page: 1, append: false })}
-                className="rounded-full border border-rose-200/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-rose-100 transition hover:border-rose-100/80"
-              >
-                Retry
-              </button>
-            </div>
-          ) : null}
-
-          {!loading && !error && !hasFilteredReviews ? (
-            <div className="rounded-3xl border border-dashed border-emerald-300/40 bg-[#0d221c] p-6 text-center text-sm text-emerald-200/70">
-              {hasAnyReviews
-                ? "No reviews match those filters right now."
-                : "No reviews yet. Be the first to share your thoughts."}
-            </div>
-          ) : null}
-
-          {filteredReviews.map((review) => {
-            const busy = Boolean(helpfulBusy[review.id]);
-            const reviewStatus = review.status ?? "approved";
-            const isPending = reviewStatus !== "approved";
-            return (
-              <article
-                key={review.id}
-                className="rounded-3xl border border-white/5 bg-[#0d221c] p-5"
-              >
-                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                  <div className="flex gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-sm font-semibold text-emerald-200">
-                      {getInitials(review.user?.name || "")}
-                    </div>
-                    <div className="space-y-2">
-                      <div>
-                        <p className="text-sm font-semibold text-emerald-100">
-                          {review.user?.name || "Verified customer"}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.2em] text-emerald-200/60">
-                          <span>
-                            {formatDate(review.createdAt) || "Recently"}
-                          </span>
-                          {review.isVerifiedPurchase ? (
-                            <span className="rounded-full border border-emerald-300/40 px-2 py-0.5 text-[0.65rem] text-emerald-200">
-                              Verified purchase
-                            </span>
-                          ) : null}
-                          {isPending ? (
-                            <span className="rounded-full border border-amber-300/40 px-2 py-0.5 text-[0.65rem] text-amber-200">
-                              Awaiting approval
-                            </span>
-                          ) : null}
-                          {review.variant?.size ? (
-                            <span>Size {review.variant.size}</span>
-                          ) : null}
-                          {review.variant?.color ? (
-                            <span>Colour {review.variant.color}</span>
-                          ) : null}
-                        </div>
-                      </div>
-
-                      {review.title ? (
-                        <p className="text-sm font-semibold text-emerald-100">
-                          {review.title}
-                        </p>
-                      ) : null}
-                      <p className="text-sm leading-relaxed text-emerald-200/80">
-                        {review.comment}
-                      </p>
-
-                      {review.adminResponse?.message ? (
-                        <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-xs text-emerald-200/80">
-                          <p className="font-semibold text-emerald-100">
-                            Ciyatake team
-                          </p>
-                          <p className="mt-1 leading-relaxed">
-                            {review.adminResponse.message}
-                          </p>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-3 md:ml-6">
-                    <div className="flex items-center gap-2">
-                      <RatingDisplay
-                        rating={review.rating}
-                        size="sm"
-                        showCount={false}
-                      />
-                      <span className="text-xs text-emerald-200/60">
-                        {review.rating.toFixed(1)} / 5
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleHelpfulToggle(review.id)}
-                      className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-emerald-100 transition hover:border-emerald-200"
-                      disabled={busy || isPending}
-                    >
-                      {busy
-                        ? "Saving..."
-                        : isPending
-                        ? "Pending"
-                        : helpfulState[review.id]
-                        ? "Undo helpful"
-                        : "Helpful"}
-                      <span className="text-emerald-200/70">
-                        {review.helpfulVotes}
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
-
-          {pagination.hasMore ? (
-            <div className="flex justify-center pt-2">
-              <button
-                type="button"
-                onClick={handleLoadMore}
-                disabled={loading}
-                className="inline-flex items-center justify-center rounded-full border border-emerald-300/60 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100 transition hover:border-emerald-200 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? "Loading..." : "Load more"}
-              </button>
-            </div>
-          ) : null}
-        </div>
+  <div className="space-y-3 rounded-3xl border border-secondary/20 bg-background p-4">
+    <div className="flex items-start justify-between">
+      <div>
+        <p className="text-sm font-semibold text-text-base">
+          Rating breakdown
+        </p>
+        <p className="text-xs text-text-muted">
+          Tap to filter by rating
+        </p>
       </div>
+      <button
+        type="button"
+        onClick={toggleVerifiedFilter}
+        className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] transition ${
+          verifiedOnly
+            ? "border-primary/80 text-text-base"
+            : "border-secondary/20 text-text-muted hover:border-primary/40"
+        }`}
+      >
+        {verifiedOnly ? "Verified only" : "All reviews"}
+      </button>
+    </div>
+    <div className="space-y-2">
+      {distributionKeys.map((value) => renderRatingBar(value))}
+    </div>
+  </div>
+
+  <div className="space-y-4">
+    {loading && !hasAnyReviews ? (
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={index}
+            className="animate-pulse rounded-3xl border border-secondary/20 bg-secondary p-5"
+          >
+            <div className="mb-4 h-4 w-1/3 rounded bg-background" />
+            <div className="mb-2 h-4 rounded bg-background" />
+            <div className="h-16 rounded bg-background" />
+          </div>
+        ))}
+      </div>
+    ) : null}
+
+    {!loading && error ? (
+      <div className="space-y-3 rounded-3xl border border-primary/40 bg-secondary p-5 text-sm text-text-base">
+        <p>{error}</p>
+        <button
+          type="button"
+          onClick={() => loadReviews({ page: 1, append: false })}
+          className="rounded-full border border-primary/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-text-base transition hover:border-primary/80"
+        >
+          Retry
+        </button>
+      </div>
+    ) : null}
+
+    {!loading && !error && !hasFilteredReviews ? (
+      <div className="rounded-3xl border border-dashed border-primary/40 bg-background p-6 text-center text-sm text-text-muted">
+        {hasAnyReviews
+          ? "No reviews match those filters right now."
+          : "No reviews yet. Be the first to share your thoughts."}
+      </div>
+    ) : null}
+
+    {filteredReviews.map((review) => {
+      const busy = Boolean(helpfulBusy[review.id]);
+      const reviewStatus = review.status ?? "approved";
+      const isPending = reviewStatus !== "approved";
+      return (
+        <article
+          key={review.id}
+          className="rounded-3xl border border-secondary/20 bg-secondary p-5"
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="flex gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-text-base">
+                {getInitials(review.user?.name || "")}
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <p className="text-sm font-semibold text-text-base">
+                    {review.user?.name || "Verified customer"}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.2em] text-text-muted">
+                    <span>
+                      {formatDate(review.createdAt) || "Recently"}
+                    </span>
+                    {review.isVerifiedPurchase ? (
+                      <span className="rounded-full border border-primary/40 px-2 py-0.5 text-[0.65rem] text-text-base">
+                        Verified purchase
+                      </span>
+                    ) : null}
+                    {isPending ? (
+                      <span className="rounded-full border border-primary/40 px-2 py-0.5 text-[0.65rem] text-text-base">
+                        Awaiting approval
+                      </span>
+                    ) : null}
+                    {review.variant?.size ? (
+                      <span>Size {review.variant.size}</span>
+                    ) : null}
+                    {review.variant?.color ? (
+                      <span>Colour {review.variant.color}</span>
+                    ) : null}
+                  </div>
+                </div>
+
+                {review.title ? (
+                  <p className="text-sm font-semibold text-text-base">
+                    {review.title}
+                  </p>
+                ) : null}
+                <p className="text-sm leading-relaxed text-text-base/80">
+                  {review.comment}
+                </p>
+
+                {review.adminResponse?.message ? (
+                  <div className="rounded-2xl border border-secondary/20 bg-background p-3 text-xs text-text-muted">
+                    <p className="font-semibold text-text-base">
+                      Ciyatake team
+                    </p>
+                    <p className="mt-1 leading-relaxed">
+                      {review.adminResponse.message}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            <div className="flex flex-col items-end gap-3 md:ml-6">
+              <div className="flex items-center gap-2">
+                <RatingDisplay
+                  rating={review.rating}
+                  size="sm"
+                  showCount={false}
+                />
+                <span className="text-xs text-text-muted">
+                  {review.rating.toFixed(1)} / 5
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleHelpfulToggle(review.id)}
+                className="inline-flex items-center gap-2 rounded-full border border-secondary/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-text-base transition hover:border-primary"
+                disabled={busy || isPending}
+              >
+                {busy
+                  ? "Saving..."
+                  : isPending
+                  ? "Pending"
+                  : helpfulState[review.id]
+                  ? "Undo helpful"
+                  : "Helpful"}
+                <span className="text-text-muted">
+                  {review.helpfulVotes}
+                </span>
+              </button>
+            </div>
+          </div>
+        </article>
+      );
+    })}
+
+    {pagination.hasMore ? (
+      <div className="flex justify-center pt-2">
+        <button
+          type="button"
+          onClick={handleLoadMore}
+          disabled={loading}
+          className="inline-flex items-center justify-center rounded-full border border-primary/60 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-text-base transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? "Loading..." : "Load more"}
+        </button>
+      </div>
+    ) : null}
+  </div>
+</div>
     </section>
   );
 };

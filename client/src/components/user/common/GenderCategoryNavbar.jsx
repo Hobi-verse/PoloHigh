@@ -79,295 +79,204 @@ const CategoryDropdown = ({ gender, categories, isVisible, onClose }) => {
     }
 
     return (
-      <div className="grid grid-cols-12 gap-6">
-        {/* Women Ethnic Section */}
-        {ethnicCategory && (
-          <div className="col-span-8">
-            <h3 className="mb-4 border-b border-emerald-500/40 pb-1 text-sm font-bold uppercase tracking-wide text-emerald-200">
-              {ethnicCategory.title}
-            </h3>
-            <div className="grid grid-cols-6 gap-4">
-              {/* Sarees */}
-              <div className="space-y-1">
-                <h4 className="mb-2 text-xs font-semibold text-emerald-100">
-                  Sarees
-                </h4>
-                {ethnicCategory.subcategories
-                  .filter((sub) => sub.name.toLowerCase().includes("saree"))
-                  .slice(0, 8)
-                  .map((subcategory) => (
-                    <Link
-                      key={subcategory.slug}
-                      to={`/category/${subcategory.slug}`}
-                      className="block py-0.5 text-xs text-emerald-300 transition-colors hover:text-emerald-200 hover:underline"
-                      onClick={onClose}
-                    >
-                      {subcategory.name}
-                    </Link>
-                  ))}
-              </div>
+      <div className="grid grid-cols-12 gap-x-8 gap-y-6">
+  {/* Women Ethnic Section */}
+  {ethnicCategory && (
+    <div className="col-span-8">
+      {/* Main Title */}
+      <h3 className="mb-4 border-b border-text-muted/30 pb-2 text-sm font-bold uppercase tracking-wider text-text-base">
+        {ethnicCategory.title}
+      </h3>
+      <div className="grid grid-cols-6 gap-x-6 gap-y-4">
+        {/* Column 1: Sarees */}
+        <div className="space-y-1.5">
+          <h4 className="mb-2 text-sm font-semibold text-text-base">
+            Sarees
+          </h4>
+          {ethnicCategory.subcategories
+            .filter((sub) => sub.name.toLowerCase().includes("saree"))
+            .slice(0, 8)
+            .map((subcategory) => (
+              <Link
+                key={subcategory.slug}
+                to={`/category/${subcategory.slug}`}
+                className="block text-sm text-text-muted transition-colors hover:text-primary hover:underline"
+                onClick={onClose}
+              >
+                {subcategory.name}
+              </Link>
+            ))}
+        </div>
 
-              {/* Kurtis */}
-              <div className="space-y-1">
-                <h4 className="mb-2 text-xs font-semibold text-emerald-100">
-                  Kurtis
-                </h4>
-                {ethnicCategory.subcategories
-                  .filter((sub) => sub.name.toLowerCase().includes("kurti"))
-                  .slice(0, 5)
-                  .map((subcategory) => (
-                    <Link
-                      key={subcategory.slug}
-                      to={`/category/${subcategory.slug}`}
-                      className="block py-0.5 text-xs text-emerald-300 transition-colors hover:text-emerald-200 hover:underline"
-                      onClick={onClose}
-                    >
-                      {subcategory.name}
-                    </Link>
-                  ))}
-              </div>
+        {/* Column 2: Kurtis */}
+        <div className="space-y-1.5">
+          <h4 className="mb-2 text-sm font-semibold text-text-base">
+            Kurtis
+          </h4>
+          {ethnicCategory.subcategories
+            .filter((sub) => sub.name.toLowerCase().includes("kurti"))
+            .slice(0, 5)
+            .map((subcategory) => (
+              <Link
+                key={subcategory.slug}
+                to={`/category/${subcategory.slug}`}
+                className="block text-sm text-text-muted transition-colors hover:text-primary hover:underline"
+                onClick={onClose}
+              >
+                {subcategory.name}
+              </Link>
+            ))}
+        </div>
+        
+        {/* Other columns would follow the same pattern... */}
 
-              {/* Kurta Sets */}
-              <div className="space-y-1">
-                <h4 className="mb-2 text-xs font-semibold text-emerald-100">
-                  Kurta Sets
-                </h4>
-                {ethnicCategory.subcategories
-                  .filter(
-                    (sub) =>
-                      sub.name.toLowerCase().includes("kurta") &&
-                      sub.name.toLowerCase().includes("set")
-                  )
-                  .slice(0, 6)
-                  .map((subcategory) => (
-                    <Link
-                      key={subcategory.slug}
-                      to={`/category/${subcategory.slug}`}
-                      className="block py-0.5 text-xs text-emerald-300 transition-colors hover:text-emerald-200 hover:underline"
-                      onClick={onClose}
-                    >
-                      {subcategory.name}
-                    </Link>
-                  ))}
-              </div>
-
-              {/* Dupatta Sets */}
-              <div className="space-y-1">
-                <h4 className="mb-2 text-xs font-semibold text-emerald-100">
-                  Dupatta Sets
-                </h4>
-                {ethnicCategory.subcategories
-                  .filter(
-                    (sub) =>
-                      sub.name.toLowerCase().includes("sets") &&
-                      !sub.name.toLowerCase().includes("kurta")
-                  )
-                  .slice(0, 4)
-                  .map((subcategory) => (
-                    <Link
-                      key={subcategory.slug}
-                      to={`/category/${subcategory.slug}`}
-                      className="block py-0.5 text-xs text-emerald-300 transition-colors hover:text-emerald-200 hover:underline"
-                      onClick={onClose}
-                    >
-                      {subcategory.name}
-                    </Link>
-                  ))}
-              </div>
-
-              {/* Suits & Dress Material */}
-              <div className="space-y-1">
-                <h4 className="mb-2 text-xs font-semibold text-emerald-100">
-                  Suits & Dress Material
-                </h4>
-                {ethnicCategory.subcategories
-                  .filter(
-                    (sub) =>
-                      sub.name.toLowerCase().includes("suits") ||
-                      sub.name.toLowerCase().includes("dress material")
-                  )
-                  .slice(0, 6)
-                  .map((subcategory) => (
-                    <Link
-                      key={subcategory.slug}
-                      to={`/category/${subcategory.slug}`}
-                      className="block py-0.5 text-xs text-emerald-300 transition-colors hover:text-emerald-200 hover:underline"
-                      onClick={onClose}
-                    >
-                      {subcategory.name}
-                    </Link>
-                  ))}
-              </div>
-
-              {/* Lehengas & Other Ethnic */}
-              <div className="space-y-1">
-                <h4 className="mb-2 text-xs font-semibold text-emerald-100">
-                  Lehengas & Other Ethnic
-                </h4>
-                {ethnicCategory.subcategories
-                  .filter(
-                    (sub) =>
-                      sub.name.toLowerCase().includes("lehenga") ||
-                      sub.name.toLowerCase().includes("blouse") ||
-                      sub.name.toLowerCase().includes("dupatta") ||
-                      sub.name.toLowerCase().includes("gown") ||
-                      sub.name.toLowerCase().includes("petticoat")
-                  )
-                  .slice(0, 8)
-                  .map((subcategory) => (
-                    <Link
-                      key={subcategory.slug}
-                      to={`/category/${subcategory.slug}`}
-                      className="block py-0.5 text-xs text-emerald-300 transition-colors hover:text-emerald-200 hover:underline"
-                      onClick={onClose}
-                    >
-                      {subcategory.name}
-                    </Link>
-                  ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Women Western Section */}
-        {westernCategory && (
-          <div className="col-span-4">
-            <h3 className="mb-4 border-b border-emerald-500/40 pb-1 text-sm font-bold uppercase tracking-wide text-emerald-200">
-              {westernCategory.title}
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                {westernCategory.subcategories
-                  .slice(0, 6)
-                  .map((subcategory) => (
-                    <Link
-                      key={subcategory.slug}
-                      to={`/category/${subcategory.slug}`}
-                      className="block py-0.5 text-xs text-emerald-300 transition-colors hover:text-emerald-200 hover:underline"
-                      onClick={onClose}
-                    >
-                      {subcategory.name}
-                    </Link>
-                  ))}
-              </div>
-              <div className="space-y-1">
-                {westernCategory.subcategories.slice(6).map((subcategory) => (
-                  <Link
-                    key={subcategory.slug}
-                    to={`/category/${subcategory.slug}`}
-                    className="block py-0.5 text-xs text-emerald-300 transition-colors hover:text-emerald-200 hover:underline"
-                    onClick={onClose}
-                  >
-                    {subcategory.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+    </div>
+  )}
+
+  {/* Women Western Section */}
+  {westernCategory && (
+    <div className="col-span-4">
+      {/* Main Title */}
+      <h3 className="mb-4 border-b border-text-muted/30 pb-2 text-sm font-bold uppercase tracking-wider text-text-base">
+        {westernCategory.title}
+      </h3>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+        {/* Column 1 */}
+        <div className="space-y-1.5">
+          {westernCategory.subcategories
+            .slice(0, 6)
+            .map((subcategory) => (
+              <Link
+                key={subcategory.slug}
+                to={`/category/${subcategory.slug}`}
+                className="block text-sm text-text-muted transition-colors hover:text-primary hover:underline"
+                onClick={onClose}
+              >
+                {subcategory.name}
+              </Link>
+            ))}
+        </div>
+        {/* Column 2 */}
+        <div className="space-y-1.5">
+          {westernCategory.subcategories.slice(6).map((subcategory) => (
+            <Link
+              key={subcategory.slug}
+              to={`/category/${subcategory.slug}`}
+              className="block text-sm text-text-muted transition-colors hover:text-primary hover:underline"
+              onClick={onClose}
+            >
+              {subcategory.name}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  )}
+</div>
     );
   };
 
   const renderStandardDropdown = () => {
     return (
       <div
-        className={`grid gap-6 ${
-          gender === "Men"
-            ? "grid-cols-4"
-            : gender === "Kids"
-            ? "grid-cols-3"
-            : "grid-cols-4"
-        }`}
-      >
-        {categoryGroups.map((group, groupIndex) => (
-          <div
-            key={group.mainCategory?.slug || groupIndex}
-            className="space-y-2"
-          >
-            <h3 className="mb-2 border-b border-emerald-500/40 pb-1 text-sm font-medium uppercase tracking-wide text-emerald-200">
-              {group.title}
-            </h3>
+  className={`grid gap-x-8 gap-y-6 ${
+    gender === "Men"
+      ? "grid-cols-4"
+      : gender === "Kids"
+      ? "grid-cols-3"
+      : "grid-cols-4"
+  }`}
+>
+  {categoryGroups.map((group, groupIndex) => (
+    <div key={group.mainCategory?.slug || groupIndex} className="space-y-2">
+      {/* Group Title */}
+      <h3 className="mb-3 border-b border-text-muted/30 pb-2 text-sm font-bold uppercase tracking-wider text-text-base">
+        {group.title}
+      </h3>
 
-            <div className="space-y-1">
+      <div className="space-y-1.5">
+        {/* "All" Link - Higher prominence */}
+        <Link
+          to={`/category/${group.mainCategory?.slug}?gender=${gender}`}
+          className="block text-sm font-medium text-text-base transition-colors hover:text-primary hover:underline"
+          onClick={onClose}
+        >
+          All {group.mainCategory?.name}
+        </Link>
+
+        {/* Subcategory Links - Muted for hierarchy */}
+        {group.subcategories && group.subcategories.length > 0 && (
+          <div className="ml-2 space-y-1.5 border-l border-text-muted/20 pl-3">
+            {group.subcategories.slice(0, 10).map((subcategory) => (
               <Link
-                to={`/category/${group.mainCategory?.slug}?gender=${gender}`}
-                className="block py-0.5 text-xs font-medium text-emerald-100 transition-colors hover:text-emerald-200 hover:underline"
+                key={subcategory.slug || subcategory.id}
+                to={`/category/${subcategory.slug}?gender=${gender}`}
+                className="block text-sm text-text-muted transition-colors hover:text-primary hover:underline"
                 onClick={onClose}
               >
-                All {group.mainCategory?.name}
+                {subcategory.name}
               </Link>
-
-              {group.subcategories && group.subcategories.length > 0 && (
-                <div className="ml-1 space-y-0.5">
-                  {group.subcategories.slice(0, 10).map((subcategory) => (
-                    <Link
-                      key={subcategory.slug || subcategory.id}
-                      to={`/category/${subcategory.slug}?gender=${gender}`}
-                      className="block py-0.5 text-xs text-emerald-300 transition-colors hover:text-emerald-200 hover:underline"
-                      onClick={onClose}
-                    >
-                      {subcategory.name}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
+    </div>
+  ))}
+</div>
     );
   };
 
   return (
     <div
-      ref={dropdownRef}
-      className="absolute left-0 top-full z-50 mt-2 w-full rounded-2xl border border-emerald-900/60 bg-[#10241e] shadow-xl shadow-emerald-900/40 backdrop-blur"
-      style={{
-        width: "90%",
-        minWidth: "1000px",
-        maxWidth: "1400px",
-        marginLeft: 0,
-      }}
-    >
-      <div className="px-8 py-6">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-emerald-100">
-            {gender === "Women"
-              ? "Women's Fashion"
-              : gender === "Men"
-              ? "Men's Collection"
-              : "Kids Collection"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-emerald-300 transition-colors hover:text-emerald-100"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Category Content */}
-        {gender === "Women" ? renderWomenDropdown() : renderStandardDropdown()}
-
-        <div className="mt-6 flex gap-4 border-t border-emerald-900/60 pt-4">
-          <Link
-            to={`/${gender.toLowerCase()}`}
-            className="inline-block rounded-lg border border-emerald-500/40 px-6 py-2 text-center text-sm font-medium text-emerald-100 transition-colors hover:border-emerald-300/70 hover:bg-emerald-500/10"
-            onClick={onClose}
-          >
-            Shop All {gender}'s Items
-          </Link>
-          <Link
-            to="/offers"
-            className="inline-block rounded-lg border border-emerald-500/40 px-6 py-2 text-center text-sm font-medium text-emerald-100 transition-colors hover:border-emerald-300/70 hover:bg-emerald-500/10"
-            onClick={onClose}
-          >
-            Special Offers
-          </Link>
-        </div>
-      </div>
+  ref={dropdownRef}
+  className="absolute left-0 top-full z-50 mt-2 rounded-2xl border border-secondary/40 bg-background shadow-2xl shadow-black/50 backdrop-blur-lg"
+  style={{
+    width: "90%",
+    minWidth: "1000px",
+    maxWidth: "1400px",
+    marginLeft: 0,
+  }}
+>
+  <div className="px-8 py-6">
+    <div className="mb-6 flex items-center justify-between">
+      <h2 className="text-lg font-bold text-text-base">
+        {gender === "Women"
+          ? "Women's Fashion"
+          : gender === "Men"
+          ? "Men's Collection"
+          : "Kids Collection"}
+      </h2>
+      <button
+        onClick={onClose}
+        className="text-text-muted transition-colors hover:text-text-base"
+      >
+        &#x2715; {/* A slightly softer 'X' character */}
+      </button>
     </div>
+
+    {/* Category Content will be rendered here */}
+    {gender === "Women" ? renderWomenDropdown() : renderStandardDropdown()}
+
+    {/* Footer with action buttons */}
+    <div className="mt-6 flex gap-4 border-t border-text-muted/30 pt-6">
+      <Link
+        to={`/${gender.toLowerCase()}`}
+        className="inline-block rounded-lg border border-text-muted px-6 py-2 text-center text-sm font-medium text-text-base transition-colors hover:border-primary hover:text-primary"
+        onClick={onClose}
+      >
+        Shop All {gender}'s Items
+      </Link>
+      <Link
+        to="/offers"
+        className="inline-block rounded-lg border border-text-muted px-6 py-2 text-center text-sm font-medium text-text-base transition-colors hover:border-primary hover:text-primary"
+        onClick={onClose}
+      >
+        Special Offers
+      </Link>
+    </div>
+  </div>
+</div>
   );
 };
 
@@ -544,7 +453,7 @@ const GenderCategoryNavbar = ({
   const actions = [...commonActions, ...authActions];
 
   return (
-    <header className="border-b border-white/10 bg-[#0b1d18]/95 text-emerald-50 backdrop-blur sticky top-0 z-50">
+    <header className="border-b border-white/10 bg-background text-text-muted backdrop-blur sticky top-0 z-50">
       <nav className="mx-auto max-w-7xl px-4 py-4 relative">
         <div className="flex items-center gap-4">
           {/* Brand */}
@@ -554,12 +463,12 @@ const GenderCategoryNavbar = ({
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <img
-              src="/ciyatakeLogo.png"
-              alt="Ciyatake"
-              className="h-8 w-auto md:h-10"
+              src="/polohighlogo.jpg"
+              alt="Polohigh"
+              className="h-6 rounded-full w-auto md:h-10"
             />
-            <span className="text-base font-semibold tracking-tight text-emerald-50 md:text-lg">
-              Ciyatake
+            <span className="text-base font-semibold tracking-tight text-primary/90 md:text-lg">
+              POLOHIGH
             </span>
           </Link>
 
@@ -573,7 +482,7 @@ const GenderCategoryNavbar = ({
               >
                 <Link
                   to={link.to}
-                  className="transition hover:text-emerald-300 hover:underline py-2 px-2"
+                  className="transition hover:text-yellow-200 hover:underline py-2 px-2"
                 >
                   {link.label}
                 </Link>
@@ -582,14 +491,14 @@ const GenderCategoryNavbar = ({
 
             <Link
               to="/accessories"
-              className="transition hover:text-emerald-300 hover:underline py-2 px-2"
+              className="transition hover:text-yellow-200 hover:underline py-2 px-2"
             >
               Accessories
             </Link>
 
             <Link
               to="/home-living"
-              className="transition hover:text-emerald-300 hover:underline py-2 px-2"
+              className="transition hover:text-yellow-200 hover:underline py-2 px-2"
             >
               Home & Living
             </Link>
@@ -627,12 +536,12 @@ const GenderCategoryNavbar = ({
                       onSearchSubmit?.(searchTerm);
                     }
                   }}
-                  className="w-full rounded-full border border-white/20 bg-white/10 px-4 py-2 pl-10 text-sm text-emerald-50 placeholder-emerald-300/60 backdrop-blur transition focus:border-emerald-300 focus:bg-white/20 focus:outline-none"
+                  className="w-full rounded-full border border-secondary/60 bg-secondary/40 px-4 py-2 pl-10 text-sm text-text-base placeholder:text-text-muted backdrop-blur transition focus:border-primary focus:bg-secondary/60 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
                 <img
                   src={searchIcon}
                   alt=""
-                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-300/60"
+                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
                   aria-hidden="true"
                 />
               </div>
@@ -640,51 +549,53 @@ const GenderCategoryNavbar = ({
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center gap-2">
-              {actions.map((action, index) => {
-                const key =
-                  action.key ?? `${action.label ?? "action"}-${index}`;
+  {actions.map((action, index) => {
+    const key = action.key ?? `${action.label ?? "action"}-${index}`;
 
-                if (action.variant === "button" && action.to) {
-                  return (
-                    <Link
-                      key={key}
-                      to={action.to}
-                      onClick={action.onClick}
-                      className="inline-flex items-center justify-center rounded-full border border-emerald-300/70 px-4 py-2 text-sm font-semibold text-emerald-100 transition hover:border-emerald-200 hover:bg-emerald-400/10"
-                    >
-                      {action.label}
-                    </Link>
-                  );
-                }
+    // Primary Action Button (e.g., Login)
+    if (action.variant === "button" && action.to) {
+      return (
+        <Link
+          key={key}
+          to={action.to}
+          onClick={action.onClick}
+          className="inline-flex items-center justify-center rounded-full border border-primary px-4 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-background"
+        >
+          {action.label}
+        </Link>
+      );
+    }
 
-                if (action.to) {
-                  return (
-                    <Link
-                      key={key}
-                      to={action.to}
-                      onClick={action.onClick}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-emerald-100 transition hover:border-emerald-300/60 hover:bg-emerald-400/10"
-                      title={action.label}
-                    >
-                      <action.icon className="h-5 w-5" />
-                    </Link>
-                  );
-                }
+    // Icon Link (e.g., Wishlist, Cart)
+    if (action.to) {
+      return (
+        <Link
+          key={key}
+          to={action.to}
+          onClick={action.onClick}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-secondary hover:text-text-base"
+          title={action.label}
+        >
+          <action.icon className="h-5 w-5" />
+        </Link>
+      );
+    }
 
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={action.onClick}
-                    disabled={isLoggingOut}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-emerald-100 transition hover:border-emerald-300/60 hover:bg-emerald-400/10 disabled:cursor-not-allowed disabled:opacity-60"
-                    title={isLoggingOut ? "Logging out..." : action.label}
-                  >
-                    <action.icon className="h-5 w-5" />
-                  </button>
-                );
-              })}
-            </div>
+    // Icon Button (e.g., Logout)
+    return (
+      <button
+        key={key}
+        type="button"
+        onClick={action.onClick}
+        disabled={isLoggingOut}
+        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-secondary hover:text-text-base disabled:cursor-not-allowed disabled:opacity-60"
+        title={isLoggingOut ? "Logging out..." : action.label}
+      >
+        <action.icon className="h-5 w-5" />
+      </button>
+    );
+  })}
+</div>
 
             {/* Mobile Menu Toggle */}
             <button
@@ -722,7 +633,7 @@ const GenderCategoryNavbar = ({
                   onSearchSubmit?.(searchTerm);
                 }
               }}
-              className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 pl-10 text-sm text-emerald-50 placeholder-emerald-300/60 backdrop-blur transition focus:border-emerald-300 focus:bg-white/20 focus:outline-none"
+              className="w-full rounded-xl border border-secondary/60 bg-secondary/40 px-4 py-3 pl-10 text-sm text-text-base placeholder:text-text-muted backdrop-blur transition focus:border-primary focus:bg-secondary/60 focus:outline-none"
             />
             <img
               src={searchIcon}

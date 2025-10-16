@@ -117,12 +117,12 @@ const UserNavbar = ({
       brand={
         <>
           <img
-            src="/ciyatakeLogo.png"
-            alt="Ciyatake"
-            className="h-8 w-auto md:h-10"
+            src="/polohighlogo.jpg"
+            alt="polohigh"
+            className="h-6 rounded-full w-auto md:h-10"
           />
-          <span className="text-base font-semibold tracking-tight text-emerald-50 md:text-lg">
-            Ciyatake
+          <span className="text-base  font-semibold tracking-tight text-primary/90 md:text-lg">
+            POLOHIGH
           </span>
         </>
       }

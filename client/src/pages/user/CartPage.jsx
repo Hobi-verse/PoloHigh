@@ -391,7 +391,7 @@ const CartPage = ({ isLoggedIn = false }) => {
   ]);
 
   return (
-    <div className="min-h-screen bg-[#07150f] text-emerald-50">
+    <div className="min-h-screen bg-background text-text-base">
       <UserNavbar isLoggedIn={isLoggedIn} />
       <main className="mx-auto max-w-6xl space-y-10 px-4 py-12">
         <Breadcrumbs
@@ -402,7 +402,7 @@ const CartPage = ({ isLoggedIn = false }) => {
           <h1 className="text-3xl font-semibold text-white md:text-4xl">
             Shopping Cart
           </h1>
-          <p className="text-sm text-emerald-200/80">
+          <p className="text-sm text-text-base">
             Review your items before heading to checkout.
           </p>
         </header>
@@ -468,46 +468,46 @@ const CartPage = ({ isLoggedIn = false }) => {
         </section>
 
         {actionError ? (
-          <div className="rounded-3xl border border-rose-300/40 bg-rose-500/10 p-6 text-sm text-rose-100">
-            {actionError}
-          </div>
+          <div className="rounded-3xl border border-secondary/40 bg-secondary p-6 text-sm text-text-base">
+    {actionError}
+</div>
         ) : null}
 
-        <section className="rounded-3xl border border-white/5 bg-white/5 p-6 shadow-[0_16px_40px_rgba(8,35,25,0.25)]">
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-white">
-                Saved for later
-              </h2>
-              <p className="text-sm text-emerald-200/75">
-                Items you love, ready whenever you are.
-              </p>
-            </div>
-            {savedItems.length ? (
-              <span className="rounded-full border border-emerald-300/40 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-emerald-200/70">
-                {savedItems.length} item{savedItems.length > 1 ? "s" : ""}
-              </span>
-            ) : null}
-          </div>
+        <section className="rounded-3xl border border-secondary/20 bg-secondary p-6 shadow-xl shadow-secondary/20">
+  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+    <div>
+      <h2 className="text-xl font-semibold text-text-base">
+        Saved for later
+      </h2>
+      <p className="text-sm text-text-muted">
+        Items you love, ready whenever you are.
+      </p>
+    </div>
+    {savedItems.length ? (
+      <span className="rounded-full border border-primary/40 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-text-muted">
+        {savedItems.length} item{savedItems.length > 1 ? "s" : ""}
+      </span>
+    ) : null}
+  </div>
 
-          <div className="mt-6 grid gap-4">
-            {savedItems.length ? (
-              savedItems.map((item) => (
-                <SavedItem
-                  key={item.id}
-                  item={item}
-                  onMoveToCart={handleMoveToCart}
-                  onRemove={handleRemoveSaved}
-                />
-              ))
-            ) : (
-              <div className="rounded-2xl border border-dashed border-emerald-300/40 bg-[#0d221c] p-8 text-center text-sm text-emerald-200/70">
-                No items saved for later yet. Tap "Save for later" on any
-                product to add it here.
-              </div>
-            )}
-          </div>
-        </section>
+  <div className="mt-6 grid gap-4">
+    {savedItems.length ? (
+      savedItems.map((item) => (
+        <SavedItem
+          key={item.id}
+          item={item}
+          onMoveToCart={handleMoveToCart}
+          onRemove={handleRemoveSaved}
+        />
+      ))
+    ) : (
+      <div className="rounded-2xl border border-dashed border-primary/40 bg-background p-8 text-center text-sm text-text-muted">
+        No items saved for later yet. Tap "Save for later" on any product to
+        add it here.
+      </div>
+    )}
+  </div>
+</section>
       </main>
     </div>
   );
