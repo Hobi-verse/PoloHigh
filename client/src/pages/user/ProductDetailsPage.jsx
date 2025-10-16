@@ -700,16 +700,16 @@ const ProductDetailsPage = ({ isLoggedIn = false }) => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#07150f] text-emerald-50">
+    <div className="min-h-screen bg-background text-text-base">
       <UserNavbar isLoggedIn={isLoggedIn} />
 
       <div className="mx-auto max-w-6xl space-y-12 px-4 pb-24 pt-8">
         {loading ? (
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center text-sm text-emerald-200/70">
+          <div className="rounded-3xl border border-secondary/20 bg-secondary p-8 text-center text-sm text-text-muted">
             Loading product details...
           </div>
         ) : error ? (
-          <div className="rounded-3xl border border-rose-300/40 bg-rose-500/10 p-8 text-center text-sm text-rose-100">
+          <div className="rounded-3xl border border-primary/40 bg-secondary p-8 text-center text-sm text-text-base">
             We couldn&apos;t load this product right now.
           </div>
         ) : productDetail ? (

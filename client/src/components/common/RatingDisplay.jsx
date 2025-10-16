@@ -43,9 +43,9 @@ const RatingDisplay = ({
         })}
       </div>
       {showCount ? (
-        <span className="font-medium text-emerald-100">
+        <span className="font-medium text-text-base">
           {safeRating.toFixed(1)}
-          <span className="ml-1 text-emerald-200/70">
+          <span className="ml-1 text-text-muted">
             ({count.toLocaleString()})
           </span>
         </span>
