@@ -18,25 +18,25 @@ const SelectionGroup = ({ items = [], value, onChange, multiple = false }) => {
 
   return (
     <div className="flex flex-wrap gap-2">
-      {items.map((item) => {
-        const active = isSelected(item.value);
-        return (
-          <button
-            key={item.value ?? item.label}
-            type="button"
-            onClick={() => handleSelect(item.value)}
-            aria-pressed={active}
-            className={`rounded-full border px-3 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-emerald-300 focus-visible:outline-offset-2 ${
-              active
-                ? "border-emerald-300 bg-emerald-400/10 text-emerald-100"
-                : "border-white/10 bg-white/5 text-emerald-200/80 hover:border-emerald-300/40 hover:bg-emerald-400/10"
-            }`}
-          >
-            {item.label}
-          </button>
-        );
-      })}
-    </div>
+  {items.map((item) => {
+    const active = isSelected(item.value);
+    return (
+      <button
+        key={item.value ?? item.label}
+        type="button"
+        onClick={() => handleSelect(item.value)}
+        aria-pressed={active}
+        className={`rounded-full border px-3 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-primary focus-visible:outline-offset-2 ${
+          active
+            ? "border-primary bg-primary/10 text-text-base"
+            : "border-secondary/20 bg-secondary text-text-muted hover:border-primary/40 hover:bg-primary/10"
+        }`}
+      >
+        {item.label}
+      </button>
+    );
+  })}
+</div>
   );
 };
 

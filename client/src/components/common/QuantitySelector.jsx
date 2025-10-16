@@ -1,8 +1,8 @@
 import { useCallback } from "react";
 
 const defaultButtonClasses =
-  "inline-flex h-9 w-9 items-center justify-center rounded-full border border-emerald-300/40 bg-white/5 text-lg text-emerald-100 transition hover:border-emerald-300/70 hover:bg-emerald-400/10";
-
+  "inline-flex h-9 w-9 items-center justify-center rounded-full border border-primary/40 bg-secondary text-lg text-text-base transition hover:border-primary/70 hover:bg-primary/10";
+  
 const QuantitySelector = ({
   value = 1,
   min = 1,
@@ -38,51 +38,51 @@ const QuantitySelector = ({
   if (variant === "pill") {
     return (
       <div
-        className={`inline-flex items-center rounded-full border border-white/10 bg-white/5 text-emerald-100 shadow-sm [box-shadow:0_8px_20px_rgba(8,35,25,0.25)] ${className}`.trim()}
-      >
-        <button
-          type="button"
-          onClick={handleDecrease}
-          className="h-10 w-10 rounded-l-full text-lg transition hover:bg-emerald-400/10"
-          aria-label="Decrease quantity"
-        >
-          −
-        </button>
-        <span className="px-4 text-sm font-semibold">{value}</span>
-        <button
-          type="button"
-          onClick={handleIncrease}
-          className="h-10 w-10 rounded-r-full text-lg transition hover:bg-emerald-400/10"
-          aria-label="Increase quantity"
-        >
-          +
-        </button>
-      </div>
+  className={`inline-flex items-center rounded-full border border-secondary/20 bg-secondary text-text-base shadow-lg shadow-secondary/20 ${className}`.trim()}
+>
+  <button
+    type="button"
+    onClick={handleDecrease}
+    className="h-10 w-10 rounded-l-full text-lg transition hover:bg-primary/10"
+    aria-label="Decrease quantity"
+  >
+    −
+  </button>
+  <span className="px-4 text-sm font-semibold">{value}</span>
+  <button
+    type="button"
+    onClick={handleIncrease}
+    className="h-10 w-10 rounded-r-full text-lg transition hover:bg-primary/10"
+    aria-label="Increase quantity"
+  >
+    +
+  </button>
+</div>
     );
   }
 
   return (
     <div className={`flex items-center gap-3 ${className}`.trim()}>
-      <button
-        type="button"
-        onClick={handleDecrease}
-        className={defaultButtonClasses}
-        aria-label="Decrease quantity"
-      >
-        −
-      </button>
-      <span className="min-w-[2rem] text-center text-sm font-semibold text-emerald-100">
-        {value}
-      </span>
-      <button
-        type="button"
-        onClick={handleIncrease}
-        className={defaultButtonClasses}
-        aria-label="Increase quantity"
-      >
-        +
-      </button>
-    </div>
+  <button
+    type="button"
+    onClick={handleDecrease}
+    className={defaultButtonClasses}
+    aria-label="Decrease quantity"
+  >
+    −
+  </button>
+  <span className="min-w-[2rem] text-center text-sm font-semibold text-text-base">
+    {value}
+  </span>
+  <button
+    type="button"
+    onClick={handleIncrease}
+    className={defaultButtonClasses}
+    aria-label="Increase quantity"
+  >
+    +
+  </button>
+</div>
   );
 };
 
