@@ -46,7 +46,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-dataBase.connect();
+
 
 //routes
 app.use("/api/v1/auth", authRoutes);
@@ -69,6 +69,25 @@ app.get("/", (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`server is running on port ${PORT}`);
-});
+const startServer = async () => {
+    try {
+        await dataBase.connect();
+
+        if(process.env.NODE_ENV!=="production"){
+            const server = app.listen(PORT, () => {
+            console.log(`server is running on port ${PORT}`);
+            });
+            server.on('error', (err) => {
+                console.error('Failed to start server:', err);
+                process.exit(1);
+            });
+        }
+        
+    } catch (error) {
+        console.error("Failed to start server:", error);
+        process.exit(1);
+    }
+}
+startServer();
+
+module.exports = app;
