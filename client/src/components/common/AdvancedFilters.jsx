@@ -51,30 +51,34 @@ const RATING_OPTIONS = [
 ];
 
 const FilterSection = ({ title, children, isOpen, onToggle }) => (
-  <div className="border-b border-emerald-900/60 pb-4 last:border-b-0">
-    <button
-      onClick={onToggle}
-      className="flex w-full items-center justify-between py-3 text-left text-sm font-semibold text-emerald-100 transition-colors hover:text-emerald-300"
+  <div className="border-b border-text-muted/30 pb-4 last:border-b-0">
+  <button
+    onClick={onToggle}
+    className="flex w-full items-center justify-between py-3 text-left text-sm font-semibold text-text-base transition-colors hover:text-primary"
+  >
+    {title}
+    <svg
+      className={`h-5 w-5 transform transition-transform duration-200 ${
+        isOpen ? "rotate-180" : ""
+      }`}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
     >
-      {title}
-      <svg
-        className={`h-5 w-5 transform transition-transform duration-200 ${
-          isOpen ? "rotate-180" : ""
-        }`}
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
-    </button>
-    {isOpen && <div className="mt-3 space-y-3">{children}</div>}
-  </div>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 9l-7 7-7-7"
+      />
+    </svg>
+  </button>
+  {isOpen && (
+    <div className="mt-3 pl-2 space-y-3">
+      {children}
+    </div>
+  )}
+</div>
 );
 
 const AdvancedFilters = ({
@@ -216,22 +220,24 @@ const AdvancedFilters = ({
   return (
     <div className="w-full lg:w-80">
       <div className="sticky top-4">
-        <div className="rounded-xl border border-emerald-900 bg-[#132e26] shadow-lg shadow-emerald-900/40">
-          <div className="border-b border-emerald-900/60 p-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-emerald-100">FILTERS</h2>
-              {hasActiveFilters && (
-                <button
-                  onClick={onClearFilters}
-                  className="text-sm font-medium text-emerald-300 transition-colors hover:text-emerald-200"
-                >
-                  Clear All
-                </button>
-              )}
-            </div>
-            <p className="mt-2 text-sm text-emerald-200">
-              {productCount}+ Products
-            </p>
+        <div className="rounded-xl border border-secondary/40 bg-background shadow-xl shadow-black/40">
+          <div className="border-b border-text-muted/30 p-6">
+  <div className="flex items-center justify-between">
+    <h2 className="text-lg font-bold uppercase tracking-wider text-text-base">
+      Filters
+    </h2>
+    {hasActiveFilters && (
+      <button
+        onClick={onClearFilters}
+        className="text-sm font-medium text-primary transition-opacity hover:opacity-80"
+      >
+        Clear All
+      </button>
+    )}
+  </div>
+  <p className="mt-2 text-sm text-text-muted">
+    {productCount}+ Products
+  </p>
           </div>
 
           <div className="space-y-6 p-6 text-emerald-100">
@@ -241,8 +247,8 @@ const AdvancedFilters = ({
                 onClick={() => onClearFilters()}
                 className={`w-full rounded-lg py-3 px-4 text-left font-semibold transition-all ${
                   !hasActiveFilters
-                    ? "bg-emerald-500 text-emerald-50 shadow-md hover:bg-emerald-400"
-                    : "bg-[#1c3b33] text-emerald-200 hover:bg-[#21453c]"
+                    ? "bg-primary text-background shadow-md hover:opacity-90"
+                    : "bg-secondary/60 text-text-base hover:bg-secondary"
                 }`}
               >
                 All Products
@@ -259,7 +265,7 @@ const AdvancedFilters = ({
                 {GENDER_OPTIONS.map((gender) => (
                   <label
                     key={gender.value}
-                    className="flex items-center cursor-pointer group"
+                    className="group flex cursor-pointer items-center"
                   >
                     <input
                       type="radio"
@@ -267,9 +273,9 @@ const AdvancedFilters = ({
                       value={gender.value}
                       checked={filters.gender === gender.value}
                       onChange={(e) => updateFilter("gender", e.target.value)}
-                      className="mr-3 h-4 w-4 border-emerald-900/60 bg-[#10251f] text-emerald-400 focus:ring-emerald-400 cursor-pointer"
+                      className="mr-3 h-4 w-4 cursor-pointer border-secondary/60 bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
                     />
-                    <span className="text-sm text-emerald-100 transition-colors group-hover:text-emerald-300">
+                    <span className="text-sm text-text-base transition-colors group-hover:text-primary">
                       {gender.label}
                     </span>
                   </label>
@@ -279,248 +285,249 @@ const AdvancedFilters = ({
 
             {/* Category Filter */}
             <FilterSection
-              title="Category"
-              isOpen={openSections.category}
-              onToggle={() => toggleSection("category")}
-            >
-              {loadingCategories ? (
-                <p className="text-sm text-emerald-300">
-                  Loading categories...
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  <label className="flex items-center cursor-pointer group">
-                    <input
-                      type="radio"
-                      name="category"
-                      value="all"
-                      checked={filters.category === "all"}
-                      onChange={(e) => updateFilter("category", e.target.value)}
-                      className="mr-3 h-4 w-4 border-emerald-900/60 bg-[#10251f] text-emerald-400 focus:ring-emerald-400 cursor-pointer"
-                    />
-                    <span className="text-sm text-emerald-100 transition-colors group-hover:text-emerald-300">
-                      All Categories
-                    </span>
-                  </label>
-                  {availableCategories.map((category) => (
-                    <label
-                      key={category.value}
-                      className="flex items-center cursor-pointer group"
-                    >
-                      <input
-                        type="radio"
-                        name="category"
-                        value={category.value}
-                        checked={filters.category === category.value}
-                        onChange={(e) =>
-                          updateFilter("category", e.target.value)
-                        }
-                        className="mr-3 h-4 w-4 border-emerald-900/60 bg-[#10251f] text-emerald-400 focus:ring-emerald-400 cursor-pointer"
-                      />
-                      <span className="text-sm text-emerald-100 transition-colors group-hover:text-emerald-300">
-                        {category.label}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </FilterSection>
+  title="Category"
+  isOpen={openSections.category}
+  onToggle={() => toggleSection("category")}
+>
+  {loadingCategories ? (
+    <p className="text-sm text-text-muted">
+      Loading categories...
+    </p>
+  ) : (
+    <div className="space-y-2">
+      <label className="group flex cursor-pointer items-center">
+        <input
+          type="radio"
+          name="category"
+          value="all"
+          checked={filters.category === "all"}
+          onChange={(e) => updateFilter("category", e.target.value)}
+          className="mr-3 h-4 w-4 cursor-pointer border-secondary/60 bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+        />
+        <span className="text-sm text-text-base transition-colors group-hover:text-primary">
+          All Categories
+        </span>
+      </label>
+      {availableCategories.map((category) => (
+        <label
+          key={category.value}
+          className="group flex cursor-pointer items-center"
+        >
+          <input
+            type="radio"
+            name="category"
+            value={category.value}
+            checked={filters.category === category.value}
+            onChange={(e) =>
+              updateFilter("category", e.target.value)
+            }
+            // Applying the consistent, redesigned style
+            className="mr-3 h-4 w-4 cursor-pointer border-secondary/60 bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+          />
+          <span className="text-sm text-text-base transition-colors group-hover:text-primary">
+            {category.label}
+          </span>
+        </label>
+      ))}
+    </div>
+  )}
+</FilterSection>
 
             {/* Subcategory Filter - Only show if category is selected */}
             {filters.category &&
               filters.category !== "all" &&
               availableSubcategories.length > 0 && (
                 <FilterSection
-                  title="Subcategory"
-                  isOpen={openSections.subcategory}
-                  onToggle={() => toggleSection("subcategory")}
-                >
-                  <div className="space-y-2">
-                    <label className="flex items-center cursor-pointer group">
-                      <input
-                        type="radio"
-                        name="subcategory"
-                        value="all"
-                        checked={filters.subcategory === "all"}
-                        onChange={(e) =>
-                          updateFilter("subcategory", e.target.value)
-                        }
-                        className="mr-3 h-4 w-4 border-emerald-900/60 bg-[#10251f] text-emerald-400 focus:ring-emerald-400 cursor-pointer"
-                      />
-                      <span className="text-sm text-emerald-100 transition-colors group-hover:text-emerald-300">
-                        All Subcategories
-                      </span>
-                    </label>
-                    {availableSubcategories.map((subcategory) => (
-                      <label
-                        key={subcategory.value}
-                        className="flex items-center cursor-pointer group"
-                      >
-                        <input
-                          type="radio"
-                          name="subcategory"
-                          value={subcategory.value}
-                          checked={filters.subcategory === subcategory.value}
-                          onChange={(e) =>
-                            updateFilter("subcategory", e.target.value)
-                          }
-                          className="mr-3 h-4 w-4 border-emerald-900/60 bg-[#10251f] text-emerald-400 focus:ring-emerald-400 cursor-pointer"
-                        />
-                        <span className="text-sm text-emerald-100 transition-colors group-hover:text-emerald-300">
-                          {subcategory.label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </FilterSection>
+  title="Subcategory"
+  isOpen={openSections.subcategory}
+  onToggle={() => toggleSection("subcategory")}
+>
+  <div className="space-y-2">
+    <label className="group flex cursor-pointer items-center">
+      <input
+        type="radio"
+        name="subcategory"
+        value="all"
+        checked={filters.subcategory === "all"}
+        onChange={(e) =>
+          updateFilter("subcategory", e.target.value)
+        }
+        className="mr-3 h-4 w-4 cursor-pointer border-secondary/60 bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+      />
+      <span className="text-sm text-text-base transition-colors group-hover:text-primary">
+        All Subcategories
+      </span>
+    </label>
+    {availableSubcategories.map((subcategory) => (
+      <label
+        key={subcategory.value}
+        className="group flex cursor-pointer items-center"
+      >
+        <input
+          type="radio"
+          name="subcategory"
+          value={subcategory.value}
+          checked={filters.subcategory === subcategory.value}
+          onChange={(e) =>
+            updateFilter("subcategory", e.target.value)
+          }
+          className="mr-3 h-4 w-4 cursor-pointer border-secondary/60 bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+        />
+        <span className="text-sm text-text-base transition-colors group-hover:text-primary">
+          {subcategory.label}
+        </span>
+      </label>
+    ))}
+  </div>
+</FilterSection>
               )}
 
             {/* Color Filter */}
             <FilterSection
-              title="Color"
-              isOpen={openSections.color}
-              onToggle={() => toggleSection("color")}
-            >
-              <div className="grid grid-cols-4 gap-3">
-                {COMMON_COLORS.map((color) => (
-                  <button
-                    key={color.name}
-                    onClick={() => toggleArrayFilter("colors", color.name)}
-                    className={`group relative flex h-12 w-12 items-center justify-center rounded-lg border-2 transition-all hover:scale-105 ${
-                      filters.colors?.includes(color.name)
-                        ? "border-emerald-400 ring-2 ring-emerald-500/30"
-                        : "border-emerald-900/60 hover:border-emerald-700"
-                    }`}
-                    title={
-                      color.name.charAt(0).toUpperCase() + color.name.slice(1)
-                    }
-                  >
-                    <div
-                      className={`h-8 w-8 rounded-md ${
-                        color.name === "white"
-                          ? "border-2 border-emerald-200/70"
-                          : "border border-emerald-900/60"
-                      }`}
-                      style={{ backgroundColor: color.hex }}
-                    />
-                    {filters.colors?.includes(color.name) && (
-                      <svg
-                        className={`absolute h-5 w-5 ${
-                          color.name === "white" || color.name === "yellow"
-                            ? "text-emerald-900"
-                            : "text-white"
-                        } drop-shadow-lg`}
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </FilterSection>
+  title="Color"
+  isOpen={openSections.color}
+  onToggle={() => toggleSection("color")}
+>
+  <div className="grid grid-cols-4 gap-3">
+    {COMMON_COLORS.map((color) => (
+      <button
+        key={color.name}
+        onClick={() => toggleArrayFilter("colors", color.name)}
+        className={`group relative flex h-12 w-12 items-center justify-center rounded-lg border-2 transition-all hover:scale-105 ${
+          filters.colors?.includes(color.name)
+            ? "border-primary ring-2 ring-primary/50" // Active state
+            : "border-secondary/60 hover:border-primary" // Inactive and hover states
+        }`}
+        title={
+          color.name.charAt(0).toUpperCase() + color.name.slice(1)
+        }
+      >
+        <div
+          className={`h-8 w-8 rounded-md ${
+            // Special border for white to make it visible
+            color.name === "white" ? "border-2 border-text-muted/60" : ""
+          }`}
+          style={{ backgroundColor: color.hex }}
+        />
+        {filters.colors?.includes(color.name) && (
+          <svg
+            className={`absolute h-5 w-5 ${
+              // Adjust checkmark color for legibility
+              color.name === "white" || color.name === "yellow"
+                ? "text-background"
+                : "text-text-base"
+            } drop-shadow-lg`}
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+        )}
+      </button>
+    ))}
+  </div>
+</FilterSection>
 
             {/* Size Filter */}
             <FilterSection
-              title="Size"
-              isOpen={openSections.size}
-              onToggle={() => toggleSection("size")}
-            >
-              <div className="grid grid-cols-4 gap-2">
-                {COMMON_SIZES.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => toggleArrayFilter("sizes", size)}
-                    className={`rounded-lg border py-2.5 px-3 text-sm font-semibold transition-all hover:scale-105 ${
-                      filters.sizes?.includes(size)
-                        ? "border-emerald-400 bg-emerald-500/15 text-emerald-200 shadow-sm"
-                        : "border-emerald-900/60 text-emerald-100 hover:border-emerald-700 hover:bg-[#1a352e]"
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-            </FilterSection>
+  title="Size"
+  isOpen={openSections.size}
+  onToggle={() => toggleSection("size")}
+>
+  <div className="grid grid-cols-4 gap-2">
+    {COMMON_SIZES.map((size) => (
+      <button
+        key={size}
+        onClick={() => toggleArrayFilter("sizes", size)}
+        className={`rounded-lg border py-2.5 px-3 text-sm font-semibold transition-all hover:scale-105 ${
+          filters.sizes?.includes(size)
+            ? "border-primary bg-primary/20 text-primary shadow-sm" // Active state
+            : "border-secondary/60 text-text-base hover:border-primary hover:bg-secondary/60" // Inactive and hover states
+        }`}
+      >
+        {size}
+      </button>
+    ))}
+  </div>
+</FilterSection>
 
             {/* Price Filter */}
             <FilterSection
-              title="Price"
-              isOpen={openSections.price}
-              onToggle={() => toggleSection("price")}
-            >
-              <div className="space-y-2">
-                {PRICE_RANGES.map((range, index) => (
-                  <label
-                    key={index}
-                    className="flex items-center cursor-pointer group"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={filters.priceRanges?.some(
-                        (r) => r.min === range.min && r.max === range.max
-                      )}
-                      onChange={(e) => {
-                        const currentRanges = filters.priceRanges || [];
-                        if (e.target.checked) {
-                          updateFilter("priceRanges", [
-                            ...currentRanges,
-                            range,
-                          ]);
-                        } else {
-                          updateFilter(
-                            "priceRanges",
-                            currentRanges.filter(
-                              (r) =>
-                                !(r.min === range.min && r.max === range.max)
-                            )
-                          );
-                        }
-                      }}
-                      className="mr-3 h-4 w-4 rounded border-emerald-900/60 bg-[#10251f] text-emerald-400 focus:ring-emerald-400 cursor-pointer"
-                    />
-                    <span className="text-sm text-emerald-100 transition-colors group-hover:text-emerald-300">
-                      {range.label}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </FilterSection>
+  title="Price"
+  isOpen={openSections.price}
+  onToggle={() => toggleSection("price")}
+>
+  <div className="space-y-2">
+    {PRICE_RANGES.map((range, index) => (
+      <label
+        key={index}
+        className="group flex cursor-pointer items-center"
+      >
+        <input
+          type="checkbox"
+          checked={filters.priceRanges?.some(
+            (r) => r.min === range.min && r.max === range.max
+          )}
+          onChange={(e) => {
+            const currentRanges = filters.priceRanges || [];
+            if (e.target.checked) {
+              updateFilter("priceRanges", [
+                ...currentRanges,
+                range,
+              ]);
+            } else {
+              updateFilter(
+                "priceRanges",
+                currentRanges.filter(
+                  (r) =>
+                    !(r.min === range.min && r.max === range.max)
+                )
+              );
+            }
+          }}
+          className="mr-3 h-4 w-4 cursor-pointer rounded border-secondary/60 bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+        />
+        <span className="text-sm text-text-base transition-colors group-hover:text-primary">
+          {range.label}
+        </span>
+      </label>
+    ))}
+  </div>
+</FilterSection>
 
             {/* Rating Filter */}
             <FilterSection
-              title="Rating"
-              isOpen={openSections.rating}
-              onToggle={() => toggleSection("rating")}
-            >
-              <div className="space-y-2">
-                {RATING_OPTIONS.map((rating) => (
-                  <label
-                    key={rating.value}
-                    className="flex items-center cursor-pointer group"
-                  >
-                    <input
-                      type="radio"
-                      name="rating"
-                      value={rating.value}
-                      checked={filters.minRating === rating.value}
-                      onChange={(e) =>
-                        updateFilter("minRating", Number(e.target.value))
-                      }
-                      className="mr-3 h-4 w-4 border-emerald-900/60 bg-[#10251f] text-emerald-400 focus:ring-emerald-400 cursor-pointer"
-                    />
-                    <span className="text-sm text-emerald-100 transition-colors group-hover:text-emerald-300">
-                      {rating.label}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </FilterSection>
+  title="Rating"
+  isOpen={openSections.rating}
+  onToggle={() => toggleSection("rating")}
+>
+  <div className="space-y-2">
+    {RATING_OPTIONS.map((rating) => (
+      <label
+        key={rating.value}
+        className="group flex cursor-pointer items-center"
+      >
+        <input
+          type="radio"
+          name="rating"
+          value={rating.value}
+          checked={filters.minRating === rating.value}
+          onChange={(e) =>
+            updateFilter("minRating", Number(e.target.value))
+          }
+          className="mr-3 h-4 w-4 cursor-pointer border-secondary/60 bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+        />
+        <span className="text-sm text-text-base transition-colors group-hover:text-primary">
+          {rating.label}
+        </span>
+      </label>
+    ))}
+  </div>
+</FilterSection>
           </div>
         </div>
       </div>

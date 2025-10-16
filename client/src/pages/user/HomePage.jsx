@@ -375,7 +375,7 @@ const HomePage = ({ isLoggedIn }) => {
   const isDefaultView = !hasActiveFilters && searchTerm.trim() === "";
 
   return (
-    <div className="min-h-screen bg-[#0f231d] text-emerald-100">
+    <div className="min-h-screen bg-background text-text-base">
       <GenderCategoryNavbar
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
@@ -384,159 +384,146 @@ const HomePage = ({ isLoggedIn }) => {
       />
 
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        {/* Header Section */}
-        <div className="mb-10 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-emerald-50">
-            Products For You
-          </h1>
-          <p className="mt-3 text-base text-emerald-300">
-            Discover our complete collection with advanced filters
-          </p>
-        </div>
+  {/* Header Section */}
+  <div className="mb-10 text-center">
+    <h1 className="text-4xl font-bold tracking-tight text-text-base">
+      Products For You
+    </h1>
+    <p className="mt-3 text-base text-text-muted">
+      Discover our complete collection with advanced filters
+    </p>
+  </div>
 
-        <div className="flex flex-col gap-8 lg:flex-row">
-          {/* Filters Sidebar */}
-          <AdvancedFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            productCount={totalCount}
-            onClearFilters={handleClearFilters}
-          />
+  <div className="flex flex-col gap-8 lg:flex-row">
+    {/* Filters Sidebar */}
+    <AdvancedFilters
+      filters={filters}
+      onFiltersChange={handleFiltersChange}
+      productCount={totalCount}
+      onClearFilters={handleClearFilters}
+    />
 
-          {/* Main Content */}
-          <div className="flex-1 space-y-6 rounded-2xl border border-emerald-900/60 bg-[#132e26] p-6 shadow-lg shadow-emerald-900/40">
-            {/* Sort and Results Header */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4 text-sm text-emerald-200">
-                <p>
-                  Showing {displayedCount} of {totalCount} products
-                </p>
-              </div>
+    {/* Main Content */}
+    <div className="flex-1 space-y-6 rounded-2xl border border-secondary/40 bg-secondary/20 p-6 shadow-xl shadow-black/40">
+      {/* Sort and Results Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-text-muted">
+          Showing {displayedCount} of {totalCount} products
+        </p>
 
-              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:gap-4">
-                {!isDefaultView && (
-                  <button
-                    type="button"
-                    onClick={handleClearFilters}
-                    className="text-sm font-semibold text-emerald-300 transition-colors hover:text-emerald-200"
-                  >
-                    Clear all filters
-                  </button>
-                )}
+        <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
+          {!isDefaultView && (
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="text-sm font-semibold text-primary transition-opacity hover:opacity-80"
+            >
+              Clear all filters
+            </button>
+          )}
 
-                <div className="w-48">
-                  <label className="sr-only" htmlFor="homepage-sort">
-                    Sort products
-                  </label>
-                  <select
-                    id="homepage-sort"
-                    value={sortOption}
-                    onChange={(event) => setSortOption(event.target.value)}
-                    className="w-full rounded-lg border border-emerald-900/60 bg-[#0f231d] px-3 py-2 text-sm text-emerald-200 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
-                  >
-                    {SORT_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        Sort by: {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Loading States */}
-            {categoryLoading && (
-              <p className="text-sm text-emerald-300">Loading categories…</p>
-            )}
-
-            {categoryError && (
-              <div className="flex flex-wrap items-center gap-3 rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-                <span className="font-medium">
-                  Unable to load categories right now.
-                </span>
-                <button
-                  type="button"
-                  onClick={handleRetryCategories}
-                  className="rounded border border-rose-400 px-3 py-1 font-semibold text-rose-100 transition-colors hover:bg-rose-500/20"
-                >
-                  Retry
-                </button>
-              </div>
-            )}
-
-            {/* Products Grid */}
-            {loading ? (
-              <div className="flex min-h-[16rem] items-center justify-center text-emerald-300">
-                Loading products...
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-rose-500/40 bg-rose-500/10 p-12 text-center">
-                <p className="text-rose-100">
-                  We couldn&apos;t load products right now.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => loadProducts()}
-                  className="rounded-lg border border-rose-400 px-4 py-2 font-semibold text-rose-100 transition-colors hover:bg-rose-500/20"
-                >
-                  Retry loading products
-                </button>
-              </div>
-            ) : filteredProducts.length ? (
-              <ProductGrid products={filteredProducts} />
-            ) : (
-              <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-emerald-900/60 bg-[#0f231d] p-12 text-center">
-                <p className="text-emerald-200">
-                  No products match your current filters.
-                </p>
-                <button
-                  type="button"
-                  onClick={handleClearFilters}
-                  className="rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-emerald-50 transition-colors hover:bg-emerald-400"
-                >
-                  Clear filters
-                </button>
-              </div>
-            )}
-
-            {!loading &&
-              !error &&
-              filteredProducts.length > 0 &&
-              filteredProducts.length < totalCount && (
-                <div className="flex justify-center pt-2">
-                  <button
-                    type="button"
-                    onClick={handleLoadMoreItems}
-                    className="inline-flex items-center justify-center rounded-lg bg-emerald-500 px-5 py-2 text-sm font-semibold text-emerald-50 transition-colors hover:bg-emerald-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#132e26]"
-                  >
-                    More Items
-                  </button>
-                </div>
-              )}
+          <div className="w-full sm:w-48">
+            <label className="sr-only" htmlFor="homepage-sort">
+              Sort products
+            </label>
+            <select
+              id="homepage-sort"
+              value={sortOption}
+              onChange={(event) => setSortOption(event.target.value)}
+              className="w-full rounded-lg border border-secondary/60 bg-background px-3 py-2 text-sm text-text-base transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option
+  key={option.value}
+  value={option.value}
+  className="bg-background text-text-base"
+>
+  Sort by: {option.label}
+</option>
+              ))}
+            </select>
           </div>
         </div>
-      </main>
+      </div>
+
+      {/* Loading States (Error state styling is kept for clarity) */}
+      {categoryLoading && (
+        <p className="text-sm text-text-muted">Loading categories…</p>
+      )}
+      {categoryError && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+          <span className="font-medium">Unable to load categories.</span>
+          <button type="button" onClick={handleRetryCategories} className="rounded border border-rose-400 px-3 py-1 font-semibold text-rose-100 transition-colors hover:bg-rose-500/20">
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Products Grid */}
+      {loading ? (
+        <div className="flex min-h-[16rem] items-center justify-center text-text-muted">
+          Loading products...
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-rose-500/40 bg-rose-500/10 p-12 text-center">
+          <p className="text-rose-100">We couldn't load products right now.</p>
+          <button type="button" onClick={() => loadProducts()} className="rounded-lg border border-rose-400 px-4 py-2 font-semibold text-rose-100 transition-colors hover:bg-rose-500/20">
+            Retry loading products
+          </button>
+        </div>
+      ) : filteredProducts.length ? (
+        <ProductGrid products={filteredProducts} />
+      ) : (
+        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-secondary/60 bg-background p-12 text-center">
+          <p className="text-text-muted">
+            No products match your current filters.
+          </p>
+          <button
+            type="button"
+            onClick={handleClearFilters}
+            className="rounded-lg bg-primary px-4 py-2 font-semibold text-background transition hover:opacity-90"
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
+
+      {/* "Load More" Button */}
+      {!loading && !error && filteredProducts.length > 0 && filteredProducts.length < totalCount && (
+        <div className="flex justify-center pt-2">
+          <button
+            type="button"
+            onClick={handleLoadMoreItems}
+            className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-background transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-secondary"
+          >
+            More Items
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+</main>
       {showScrollTop && (
         <button
-          type="button"
-          onClick={handleScrollToTop}
-          aria-label="Back to top"
-          className="fixed bottom-6 right-6 inline-flex h-12 w-12 items-center justify-center rounded-full border border-emerald-500/60 bg-emerald-500 text-emerald-50 shadow-lg shadow-emerald-900/40 transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-5 w-5"
-          >
-            <path d="M5 11l7-7 7 7" />
-            <path d="M12 18V4" />
-          </svg>
-        </button>
+  type="button"
+  onClick={handleScrollToTop}
+  aria-label="Back to top"
+  className="fixed bottom-6 right-6 inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-background shadow-lg shadow-black/50 transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="h-5 w-5"
+  >
+    <path d="M5 11l7-7 7 7" />
+    <path d="M12 18V4" />
+  </svg>
+</button>
       )}
     </div>
   );
