@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+
+@theme{
+    /* Polo High - Modern Luxury Palette */
+  --color-primary: #D48C45;      /* Cognac - Used for accents and main buttons */
+  --color-secondary: #1A2D4C;     /* Polo Navy - Used for secondary UI like cards */
+  --color-background: #1E1E24;    /* Deep Charcoal - Main page background */
+  --color-text-base: #F5EFE6;     /* Warm Ivory - Main text color */
+  --color-text-muted: #888888;    /* Stone Grey - Subdued text color */
+}

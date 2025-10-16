@@ -80,52 +80,61 @@ const ProductCard = ({
   })();
 
   const cardContent = (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-white/5 bg-white/5 p-4 shadow-lg transition hover:border-emerald-300/50 hover:bg-emerald-400/10">
-      {hasDiscount ? (
-        <span className="absolute left-4 top-4 rounded-full bg-rose-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
-          {roundedDiscount}% OFF
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-secondary/40 bg-background p-4 shadow-xl shadow-black/40 transition hover:border-primary">
+  {/* Discount Badge */}
+  {hasDiscount ? (
+    <span className="absolute left-4 top-4 z-10 rounded-full bg-rose-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+      {roundedDiscount}% OFF
+    </span>
+  ) : null}
+
+  {/* Image Container */}
+  <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-background">
+    {merchandisingLabel ? (
+      <span className="absolute right-3 top-3 z-10 rounded-full border border-primary/50 bg-primary/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+        {merchandisingLabel}
+      </span>
+    ) : null}
+    {imageUrl ? (
+      <img
+        src={imageUrl}
+        alt={imageAlt ?? title}
+        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+        loading="lazy"
+      />
+    ) : null}
+  </div>
+
+  {/* Content Section */}
+  <div className="mt-4 flex flex-1 flex-col justify-between gap-3">
+    <div className="space-y-1">
+      <h3 className="text-lg font-semibold text-text-base">{title}</h3>
+      {brand ? (
+        <p className="text-sm text-text-muted">{brand}</p>
+      ) : null}
+    </div>
+
+    <div className="flex items-center gap-2 text-sm text-text-base">
+      {/* Replace with SVG star icon for color control */}
+      <svg className="h-4 w-4 text-primary" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+      {ratingDisplay}
+      {reviewLabel ? (
+        <span className="text-text-muted">{reviewLabel}</span>
+      ) : null}
+    </div>
+
+    <div className="flex items-baseline gap-2">
+      <span className="text-base font-semibold text-text-base">
+        {formattedPrice}
+      </span>
+      {showOriginalPrice ? (
+        <span className="text-sm text-text-muted line-through">
+          {formattedMrp}
         </span>
       ) : null}
-      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-emerald-900/40">
-        {merchandisingLabel ? (
-          <span className="absolute right-3 top-3 rounded-full border border-white/20 bg-emerald-400/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-50">
-            {merchandisingLabel}
-          </span>
-        ) : null}
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={imageAlt ?? title}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
-        ) : null}
-      </div>
-      <div className="mt-4 flex flex-col gap-3">
-        <div className="space-y-1">
-          <h3 className="text-lg font-semibold text-white">{title}</h3>
-          {brand ? (
-            <p className="text-sm text-emerald-200/80">{brand}</p>
-          ) : null}
-        </div>
-        <div className="flex items-center gap-2 text-sm text-emerald-100">
-          <img src={starIcon} alt="" aria-hidden="true" className="h-4 w-4" />
-          {ratingDisplay && reviewLabel ? (
-            <span className="text-emerald-200/60">{reviewLabel}</span>
-          ) : null}
-        </div>
-        <div className="flex items-baseline gap-2">
-          <span className="text-base font-semibold text-white">
-            {formattedPrice}
-          </span>
-          {showOriginalPrice ? (
-            <span className="text-sm text-emerald-200/60 line-through">
-              {formattedMrp}
-            </span>
-          ) : null}
-        </div>
-      </div>
-    </article>
+    </div>
+  </div>
+</article>
   );
 
   if (to) {

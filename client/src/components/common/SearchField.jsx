@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 
 const baseInputStyles =
-  "w-full appearance-none rounded-full border border-white/10 bg-white/10 px-4 py-2.5 text-sm text-emerald-50 placeholder:text-emerald-200/60 focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-400/70 transition";
+  "w-full appearance-none rounded-full border border-secondary/60 bg-secondary/40 px-4 py-2.5 text-sm text-text-base placeholder:text-text-muted transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50";
 
 const SearchField = ({
   placeholder = "Search...",
@@ -40,20 +40,20 @@ const SearchField = ({
 
   return (
     <form onSubmit={handleSubmit} className={`relative ${className}`.trim()}>
-      {icon ? (
-        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-emerald-200/70">
-          {renderIcon()}
-        </span>
-      ) : null}
-      <input
-        type="search"
-        value={currentValue}
-        onChange={handleChange}
-        placeholder={placeholder}
-        aria-label={ariaLabel ?? placeholder}
-        className={`${baseInputStyles} ${icon ? "pl-10" : "pl-4"}`.trim()}
-      />
-    </form>
+  {icon ? (
+    <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-text-muted">
+      {renderIcon()}
+    </span>
+  ) : null}
+  <input
+    type="search"
+    value={currentValue}
+    onChange={handleChange}
+    placeholder={placeholder}
+    aria-label={ariaLabel ?? placeholder}
+    className={`${baseInputStyles} ${icon ? "pl-10" : "pl-4"}`.trim()}
+  />
+</form>
   );
 };
 

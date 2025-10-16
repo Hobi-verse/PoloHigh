@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Button from "./Button";
 
 const defaultInputClasses =
-  "w-full rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-emerald-50 placeholder-emerald-200/50 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 disabled:cursor-not-allowed disabled:opacity-60";
+  "w-full rounded-lg border border-secondary/50 bg-secondary px-4 py-2 text-text-base placeholder-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60";
 
 const AuthForm = ({
   title = "Welcome back",
@@ -200,85 +200,85 @@ const AuthForm = ({
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)] items-center justify-center bg-[#07150f]">
-      <div className="w-full max-w-md overflow-y-auto rounded-2xl border border-white/15 bg-white/5 p-6 shadow-[0_24px_60px_rgba(8,35,25,0.45)] backdrop-blur">
-        <h2 className="text-center text-2xl font-semibold text-white">
-          {title}
-        </h2>
-        <p className="mt-1 text-center text-sm text-emerald-200/80">
-          {subtitle}
-        </p>
+    <div className="flex h-[calc(100vh-64px)] items-center justify-center bg-background">
+  <div className="w-full max-w-md overflow-y-auto rounded-2xl border border-secondary/50 bg-secondary/40 p-6 shadow-2xl shadow-secondary/20 backdrop-blur">
+    <h2 className="text-center text-2xl font-semibold text-text-base">
+      {title}
+    </h2>
+    <p className="mt-1 text-center text-sm text-text-muted">
+      {subtitle}
+    </p>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          {fields.map((field, index) => renderField(field, index))}
+    <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      {fields.map((field, index) => renderField(field, index))}
 
-          {forgetPasswordText ? (
-            <div className="text-right text-sm">
-              <button
-                type="button"
-                className="text-emerald-400 transition hover:text-emerald-300"
-                onClick={() => navigate("/forget-password")}
-              >
-                {forgetPasswordText}
-              </button>
-            </div>
-          ) : null}
-
-          <Button
-            type="submit"
-            disabled={isSubmitDisabled}
-            className="w-full bg-emerald-500 text-emerald-950 hover:bg-emerald-400"
+      {forgetPasswordText ? (
+        <div className="text-right text-sm">
+          <button
+            type="button"
+            className="text-primary transition hover:text-primary/80"
+            onClick={() => navigate("/forget-password")}
           >
-            {buttonLabel}
-          </Button>
+            {forgetPasswordText}
+          </button>
+        </div>
+      ) : null}
 
-          {status?.message ? (
-            <div
-              className={`rounded-lg border px-3 py-2 text-sm ${
-                status.type === "error"
-                  ? "border-red-400/60 bg-red-500/10 text-red-200"
-                  : status.type === "success"
-                  ? "border-emerald-400/50 bg-emerald-500/10 text-emerald-100"
-                  : "border-emerald-200/40 bg-emerald-200/10 text-emerald-50"
-              }`}
+      <Button
+        type="submit"
+        disabled={isSubmitDisabled}
+        className="w-full bg-primary text-secondary hover:bg-primary/90"
+      >
+        {buttonLabel}
+      </Button>
+
+      {status?.message ? (
+        <div
+          className={`rounded-lg border px-3 py-2 text-sm ${
+            status.type === "error"
+              ? "border-red-400/60 bg-red-500/10 text-red-200" // Kept red for error state
+              : status.type === "success"
+              ? "border-primary/50 bg-primary/10 text-primary"
+              : "border-text-muted/40 bg-text-muted/10 text-text-base"
+          }`}
+        >
+          {status.message}
+        </div>
+      ) : null}
+    </form>
+
+    {socialProviders.length ? (
+      <>
+        <div className="my-4 flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-text-muted">
+          <div className="h-px flex-1 bg-text-muted/20" />
+          <span>Or continue with</span>
+          <div className="h-px flex-1 bg-text-muted/20" />
+        </div>
+        <div className="flex flex-wrap gap-3">
+          {socialProviders.map((provider, index) => (
+            <Button
+              key={`${provider.label}-${index}`}
+              className="flex-1 border border-text-muted/40 bg-transparent text-text-base hover:border-primary/60 hover:bg-primary/10"
+              onClick={provider.onClick}
             >
-              {status.message}
-            </div>
-          ) : null}
-        </form>
+              Continue with {provider.label}
+            </Button>
+          ))}
+        </div>
+      </>
+    ) : null}
 
-        {socialProviders.length ? (
-          <>
-            <div className="my-4 flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-emerald-200/60">
-              <div className="h-px flex-1 bg-white/10" />
-              <span>Or continue with</span>
-              <div className="h-px flex-1 bg-white/10" />
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {socialProviders.map((provider, index) => (
-                <Button
-                  key={`${provider.label}-${index}`}
-                  className="flex-1 border border-white/20 bg-transparent text-emerald-100 hover:border-emerald-300/60 hover:bg-emerald-400/10"
-                  onClick={provider.onClick}
-                >
-                  Continue with {provider.label}
-                </Button>
-              ))}
-            </div>
-          </>
-        ) : null}
-
-        <p className="mt-6 text-center text-sm text-emerald-200/70">
-          {footerText}{" "}
-          <a
-            href={footerLinkHref}
-            className="text-emerald-300 transition hover:text-emerald-100"
-          >
-            {footerLinkText}
-          </a>
-        </p>
-      </div>
-    </div>
+    <p className="mt-6 text-center text-sm text-text-muted">
+      {footerText}{" "}
+      <a
+        href={footerLinkHref}
+        className="font-semibold text-primary transition hover:text-primary/80"
+      >
+        {footerLinkText}
+      </a>
+    </p>
+  </div>
+</div>
   );
 };
 
