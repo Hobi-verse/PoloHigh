@@ -121,7 +121,7 @@ const UserNavbar = ({
             alt="polohigh"
             className="h-6 rounded-full w-auto md:h-10"
           />
-          <span className="text-base font-semibold tracking-tight text-text-base md:text-lg">
+          <span className="text-base  font-semibold tracking-tight text-primary/90 md:text-lg">
             POLOHIGH
           </span>
         </>
