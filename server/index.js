@@ -21,7 +21,9 @@ const couponRoutes = require("./routes/couponRoutes");
 const searchRoutes = require("./routes/searchRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 
-const PORT = process.env.PORT || 4000;
+const port = process.env.PORT || 4000;
+
+dataBase.connect();
 
 //middleware - Enable CORS for frontend communication
 app.use(cors({
@@ -69,25 +71,9 @@ app.get("/", (req, res) => {
   });
 });
 
-const startServer = async () => {
-    try {
-        await dataBase.connect();
 
-        if(process.env.NODE_ENV!=="production"){
-            const server = app.listen(PORT, () => {
-            console.log(`server is running on port ${PORT}`);
-            });
-            server.on('error', (err) => {
-                console.error('Failed to start server:', err);
-                process.exit(1);
-            });
-        }
-        
-    } catch (error) {
-        console.error("Failed to start server:", error);
-        process.exit(1);
-    }
-}
-startServer();
+const server = app.listen(port, () => {
+  console.log(`server is running on port ${port}`);
+});
 
 module.exports = app;
