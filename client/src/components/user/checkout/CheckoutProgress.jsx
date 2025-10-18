@@ -1,16 +1,16 @@
 const statusStyles = {
   complete:
-    "border-emerald-400/60 bg-emerald-500 text-emerald-950 shadow-[0_10px_30px_rgba(16,185,129,0.25)]",
+    "border-primary/60 bg-primary text-secondary shadow-lg shadow-primary/30",
   current:
-    "border-emerald-400/60 bg-white/10 text-white shadow-[0_12px_32px_rgba(8,35,25,0.35)]",
-  upcoming: "border-white/10 bg-white/5 text-emerald-200/70",
+    "border-primary bg-secondary/40 text-text-base shadow-2xl shadow-primary/25",
+  upcoming: "border-secondary/50 bg-secondary/40 text-text-muted",
 };
 
 const CheckoutProgress = ({ steps }) => {
   return (
     <nav
       aria-label="Checkout progress"
-      className="rounded-3xl border border-white/5 bg-white/[0.04] p-4 shadow-[0_24px_50px_rgba(8,35,25,0.35)]"
+      className="rounded-3xl border border-secondary/50 bg-secondary/40 p-4 shadow-2xl shadow-secondary/20"
     >
       <ol className="grid gap-4 md:grid-cols-3">
         {steps.map((step, index) => {
@@ -18,15 +18,14 @@ const CheckoutProgress = ({ steps }) => {
           const isComplete = step.status === "complete";
           const isCurrent = step.status === "current";
 
-          const labelClass =
-            isCurrent || isComplete ? "text-white" : "text-emerald-100/80";
+          const labelClass = isCurrent || isComplete ? "text-text-base" : "text-text-muted";
 
           return (
             <li
               key={step.label}
               className={`flex items-center gap-4 rounded-2xl border px-4 py-3 transition ${variant}`}
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-black/10 text-base font-semibold">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-secondary/50 bg-secondary/40 text-base font-semibold">
                 {isComplete ? (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -46,14 +45,14 @@ const CheckoutProgress = ({ steps }) => {
                 )}
               </span>
               <div className="space-y-1">
-                <p className="text-xs font-medium uppercase tracking-[0.3em] text-emerald-200/70">
+                <p className="text-xs font-medium uppercase tracking-[0.3em] text-text-muted">
                   Step {index + 1}
                 </p>
                 <p className={`text-sm font-semibold ${labelClass}`}>
                   {step.label}
                 </p>
                 {isCurrent ? (
-                  <p className="text-xs text-emerald-100/80">
+                  <p className="text-xs text-text-base/80">
                     Currently selected
                   </p>
                 ) : null}

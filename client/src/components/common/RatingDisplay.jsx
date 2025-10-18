@@ -20,7 +20,7 @@ const RatingDisplay = ({
 
   return (
     <div
-      className={`flex items-center gap-2 text-xs text-emerald-200/80 ${className}`.trim()}
+      className={`flex items-center gap-2 text-xs text-text-muted ${className}`.trim()}
     >
       <div className="flex items-center gap-1">
         {Array.from({ length: totalIcons }).map((_, index) => {

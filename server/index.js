@@ -26,10 +26,28 @@ const port = process.env.PORT || 4000;
 dataBase.connect();
 
 //middleware - Enable CORS for frontend communication
-app.use(cors({
-  origin: "https://www.polohigh.shop",
-  credentials: true,
-}));
+
+const allowedOrigins = [
+  "https://www.polohigh.shop",
+  "https://polohigh.shop",
+  "http://localhost:5173",
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
