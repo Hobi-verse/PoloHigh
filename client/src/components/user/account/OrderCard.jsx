@@ -11,11 +11,13 @@ const OrderCard = ({ order }) => {
     orderStatusStyles[order.status] ?? orderStatusStyles.Default;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-emerald-200/40">
+    <div className="rounded-2xl border border-secondary/50 bg-secondary/40 p-4 transition hover:border-primary/60">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-white">Order {order.id}</p>
-          <p className="text-xs text-emerald-200/70">
+          <p className="text-sm font-semibold text-text-base">
+            Order {order.id}
+          </p>
+          <p className="text-xs text-text-muted">
             Placed on {formatDate(order.placedOn)} · {order.items} items
           </p>
         </div>
@@ -25,28 +27,28 @@ const OrderCard = ({ order }) => {
           {order.status}
         </span>
       </div>
-      <div className="mt-4 grid gap-4 text-sm text-emerald-200/80 md:grid-cols-3">
+      <div className="mt-4 grid gap-4 text-sm md:grid-cols-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/60">
+          <p className="text-xs uppercase tracking-[0.2em] text-text-muted">
             Total amount
           </p>
-          <p className="mt-1 text-sm font-medium text-emerald-100">
+          <p className="mt-1 text-sm font-medium text-text-base">
             {formatINR(order.total)}
           </p>
         </div>
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/60">
+          <p className="text-xs uppercase tracking-[0.2em] text-text-muted">
             Payment method
           </p>
-          <p className="mt-1 text-sm font-medium text-emerald-100">
+          <p className="mt-1 text-sm font-medium text-text-base">
             {order.paymentMethod}
           </p>
         </div>
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/60">
+          <p className="text-xs uppercase tracking-[0.2em] text-text-muted">
             Delivery
           </p>
-          <p className="mt-1 text-sm font-medium text-emerald-100">
+          <p className="mt-1 text-sm font-medium text-text-base">
             {order.status === "Delivered"
               ? `Delivered on ${formatDate(order.deliveredOn)}`
               : order.expectedDelivery

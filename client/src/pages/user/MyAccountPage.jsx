@@ -620,7 +620,7 @@ const MyAccountPage = ({ isLoggedIn }) => {
   );
 
   return (
-    <div className="min-h-screen bg-[#07150f] text-emerald-50">
+    <div className="min-h-screen bg-background text-text-base">
       <UserNavbar isLoggedIn={isLoggedIn} />
       <main className="mx-auto max-w-6xl space-y-10 px-4 py-12">
         <Breadcrumbs
@@ -628,34 +628,35 @@ const MyAccountPage = ({ isLoggedIn }) => {
         />
 
         <header className="space-y-3">
-          <h1 className="text-3xl font-semibold text-white md:text-4xl">
-            My account
-          </h1>
-          <p className="text-sm text-emerald-200/80">
-            Manage your personal details, orders, and how you hear from us.
-          </p>
-        </header>
+  <h1 className="text-3xl font-semibold text-amber-400/80 md:text-4xl">
+    My account
+  </h1>
+  <p className="text-sm text-text-muted">
+    Manage your personal details, orders, and how you hear from us.
+  </p>
+</header>
 
         {loading ? (
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-sm text-emerald-200/70">
-            Loading your account...
-          </div>
+          <div className="rounded-3xl border border-secondary/50 bg-secondary/40 p-8 text-sm text-text-muted">
+  Loading your account...
+</div>
         ) : error ? (
           <div className="space-y-4">
-            <div className="rounded-3xl border border-rose-300/40 bg-rose-500/10 p-8 text-sm text-rose-100">
-              We couldn&apos;t load your account details right now.
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                loadSummary();
-                loadAddresses();
-              }}
-              className="inline-flex items-center justify-center rounded-full border border-emerald-300/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100 transition hover:border-emerald-200"
-            >
-              Retry
-            </button>
-          </div>
+  {/* Recommendation: Keep rose/red colors for error states for UX clarity */}
+  <div className="rounded-3xl border border-rose-300/40 bg-rose-500/10 p-8 text-sm text-rose-100">
+    We couldn&apos;t load your account details right now.
+  </div>
+  <button
+    type="button"
+    onClick={() => {
+      loadSummary();
+      loadAddresses();
+    }}
+    className="inline-flex items-center justify-center rounded-full border border-primary/50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary transition hover:border-primary/80"
+  >
+    Retry
+  </button>
+</div>
         ) : (
           <div className="grid gap-8 lg:grid-cols-[minmax(0,0.35fr)_minmax(0,1fr)]">
             <AccountNavigation

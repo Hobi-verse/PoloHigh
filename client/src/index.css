@@ -1,11 +1,14 @@
 @import "tailwindcss";
 
+@theme {
+  /* Polo High - Modern Luxury Palette */
+  --color-primary: #d48c45; /* Cognac - Used for accents and main buttons */
+  --color-secondary: #1a2d4c; /* Polo Navy - Used for secondary UI like cards */
+  --color-background: #1e1e24; /* Deep Charcoal - Main page background */
+  --color-text-base: #f5efe6; /* Warm Ivory - Main text color */
+  --color-text-muted: #888888; /* Stone Grey - Subdued text color */
+}
 
-@theme{
-    /* Polo High - Modern Luxury Palette */
-  --color-primary: #D48C45;      /* Cognac - Used for accents and main buttons */
-  --color-secondary: #1A2D4C;     /* Polo Navy - Used for secondary UI like cards */
-  --color-background: #1E1E24;    /* Deep Charcoal - Main page background */
-  --color-text-base: #F5EFE6;     /* Warm Ivory - Main text color */
-  --color-text-muted: #888888;    /* Stone Grey - Subdued text color */
+body {
+  @apply bg-[var(--color-background)] text-[var(--color-text-base)] font-sans;
 }
