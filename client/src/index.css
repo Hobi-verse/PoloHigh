@@ -9,6 +9,3 @@
   --color-text-muted: #888888; /* Stone Grey - Subdued text color */
 }
 
-body {
-  @apply bg-[var(--color-background)] text-[var(--color-text-base)] font-sans;
-}
