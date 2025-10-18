@@ -12,7 +12,7 @@ const OrdersSection = ({ orders }) => {
       {hasOrders ? (
         orders.map((order) => <OrderCard key={order.id} order={order} />)
       ) : (
-        <div className="rounded-2xl border border-dashed border-emerald-200/40 bg-white/5 p-6 text-sm text-emerald-200/70">
+        <div className="rounded-2xl border border-dashed border-primary/40 bg-secondary/40 p-6 text-sm text-text-muted">
           You haven&apos;t placed any orders yet. Once you do, they&apos;ll show
           up here for quick access.
         </div>

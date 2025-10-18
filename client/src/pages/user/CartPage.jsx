@@ -421,9 +421,9 @@ const CartPage = ({ isLoggedIn = false }) => {
                 </button>
               </div>
             ) : loading ? (
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-10 text-center text-sm text-emerald-200/70">
-                Loading your cart...
-              </div>
+              <div className="rounded-3xl border border-secondary/50 bg-secondary/40 p-10 text-center text-sm text-text-muted">
+  Loading your cart...
+</div>
             ) : cartItems.length ? (
               cartItems.map((item) => (
                 <CartItem
