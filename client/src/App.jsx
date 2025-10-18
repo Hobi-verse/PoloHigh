@@ -20,6 +20,7 @@ import Reports from "./components/admin/reports/Reports.jsx";
 import Users from "./components/admin/users/Users.jsx";
 import Coupons from "./pages/admin/Coupons.jsx";
 import ProtectedRoute from "./components/common/ProtectedRoute.jsx";
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import {
   AUTH_SESSION_EVENT,
   AUTH_STORAGE_KEYS,
@@ -132,6 +133,7 @@ function App() {
         <Route path="/forget-password" element={<ForgetPass />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <SpeedInsights />
     </div>
   );
 }
