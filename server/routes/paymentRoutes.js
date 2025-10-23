@@ -4,16 +4,11 @@ const {
   createOrder,
   verifyPaymentAndCreateOrder,
   getPaymentStatus,
-  handlePaymentFailure,
-  refundPayment,
+  reportPaymentFailure,
+  requestRefund,
   handleWebhook,
 } = require("../Controllers/paymentController");
-const { protect } = require("../middleware/authMiddleware");
-const {
-  validateCreateOrder,
-  validatePaymentVerification,
-  validateRefund,
-} = require("../middleware/validation/paymentValidation");
+const { protect, restrictTo } = require("../middleware/authMiddleware");
 
 // Public routes
 router.post("/webhook", handleWebhook); // Webhook should be public
@@ -21,19 +16,19 @@ router.post("/webhook", handleWebhook); // Webhook should be public
 // Protected routes (require authentication)
 router.use(protect); // Apply authentication middleware to all routes below
 
-// Create Razorpay order
-router.post("/create-order", validateCreateOrder, createOrder);
+// Create Stripe Payment Intent (Step 1 - Secure)
+router.post("/create-order", createOrder);
 
-// Verify payment and create order
-router.post("/verify-payment", validatePaymentVerification, verifyPaymentAndCreateOrder);
+// Verify Stripe payment and create order (Step 2 - Secure)
+router.post("/verify-payment", verifyPaymentAndCreateOrder);
 
 // Get payment status
 router.get("/status/:paymentId", getPaymentStatus);
 
 // Handle payment failure
-router.post("/failure", handlePaymentFailure);
+router.post("/failure", reportPaymentFailure);
 
-// Refund payment (admin only - you might want to add admin middleware)
-router.post("/refund", validateRefund, refundPayment);
+// Refund payment (admin only)
+router.post("/refund", restrictTo("admin"), requestRefund);
 
 module.exports = router;

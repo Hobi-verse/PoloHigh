@@ -209,6 +209,57 @@ const orderSchema = new mongoose.Schema(
       courierService: String,
     },
 
+    // Return request information
+    returnRequest: {
+      status: {
+        type: String,
+        enum: [
+          "requested",
+          "approved",
+          "rejected",
+          "in-transit",
+          "received",
+          "completed",
+          "cancelled",
+        ],
+        default: null,
+      },
+      reason: String,
+      customerNotes: String,
+      adminNotes: String,
+      resolution: {
+        type: String,
+        enum: ["refund", "replacement", "store-credit", "exchange"],
+      },
+      refundAmount: {
+        type: Number,
+        min: 0,
+      },
+      requestedAt: Date,
+      updatedAt: Date,
+      resolvedAt: Date,
+      processedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+      items: [
+        {
+          itemId: {
+            type: mongoose.Schema.Types.ObjectId,
+          },
+          productId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
+          },
+          variantSku: String,
+          title: String,
+          quantity: Number,
+          unitPrice: Number,
+        },
+      ],
+      evidence: [String],
+    },
+
     // Order timeline
     timeline: [timelineEventSchema],
 
@@ -263,6 +314,7 @@ orderSchema.index({ userId: 1, createdAt: -1 });
 orderSchema.index({ status: 1 });
 orderSchema.index({ "payment.status": 1 });
 orderSchema.index({ placedAt: -1 });
+orderSchema.index({ "returnRequest.status": 1 });
 
 // Virtual for shipping label
 orderSchema.virtual("shippingLabel").get(function () {
@@ -347,9 +399,9 @@ orderSchema.statics.generateOrderNumber = async function () {
   const prefix = "CYA";
   const datePart = new Date().toISOString().slice(2, 10).replace(/-/g, ""); // YYMMDD
 
-  // Find the last order number for today
+  // Find the last order number for today with correct pattern
   const lastOrder = await this.findOne({
-    orderNumber: new RegExp(`^${prefix}-${datePart}`),
+    orderNumber: new RegExp(`^${prefix}-${datePart.slice(0, 4)}-`),
   }).sort({ orderNumber: -1 });
 
   let sequence = 1000;
@@ -358,7 +410,20 @@ orderSchema.statics.generateOrderNumber = async function () {
     sequence = lastSequence + 1;
   }
 
-  return `${prefix}-${datePart.slice(0, 4)}-${sequence}`;
+  // Keep generating until we find a unique number
+  let attempts = 0;
+  while (attempts < 100) { // Prevent infinite loop
+    const orderNumber = `${prefix}-${datePart.slice(0, 4)}-${sequence + attempts}`;
+    const existingOrder = await this.findOne({ orderNumber });
+    if (!existingOrder) {
+      return orderNumber;
+    }
+    attempts++;
+  }
+
+  // Fallback with timestamp if we can't find unique number
+  const timestamp = Date.now().toString().slice(-6);
+  return `${prefix}-${datePart.slice(0, 4)}-${timestamp}`;
 };
 
 // Pre-save hook to calculate grand total

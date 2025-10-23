@@ -382,7 +382,7 @@ customerProfileSchema.statics.getAccountSummary = async function (userId) {
   const Wishlist = mongoose.model("Wishlist");
 
   const user = await User.findById(userId);
-  const recentOrders = await Order.find({ userId })
+  const recentOrderDocs = await Order.find({ userId })
     .sort({ placedAt: -1 })
     .limit(5);
   const wishlist = await Wishlist.findOne({ userId });
@@ -406,7 +406,7 @@ customerProfileSchema.statics.getAccountSummary = async function (userId) {
         id: "orders",
         label: "Orders placed",
         value: profile.stats.totalOrders,
-        trend: `${recentOrders.length} this year`,
+        trend: `${recentOrderDocs.length} this year`,
       },
       {
         id: "wishlist",
@@ -429,15 +429,69 @@ customerProfileSchema.statics.getAccountSummary = async function (userId) {
         trend: "All resolved",
       },
     ],
-    recentOrders: recentOrders.map((order) => ({
-      id: order.orderNumber,
-      placedOn: order.placedAt.toISOString().split("T")[0],
-      status: order.status,
-      total: order.pricing.grandTotal,
-      items: order.items.length,
-      expectedDelivery: order.delivery.estimatedDeliveryDate,
-      paymentMethod: order.payment.method,
-    })),
+    recentOrders: recentOrderDocs.map((order) => {
+      const orderId = order.orderNumber ?? order._id.toString();
+      const placedAt = order.placedAt ?? order.createdAt ?? new Date();
+      const pricing = order.pricing ?? {};
+      const delivery = order.delivery ?? {};
+      const payment = order.payment ?? {};
+      const shipping = order.shipping ?? {};
+
+      const timeline = Array.isArray(order.timeline)
+        ? order.timeline.map((entry, index) => ({
+          id:
+            entry._id?.toString?.() ??
+            entry.id ??
+            `${orderId}-timeline-${index}`,
+          title: entry.title ?? "",
+          description: entry.description ?? "",
+          status: entry.status ?? null,
+          timestamp: entry.timestamp ?? null,
+        }))
+        : [];
+
+      const deliveredAt = delivery.actualDeliveryDate ?? order.deliveredAt ?? null;
+      const returnWindowDays = 7;
+      let returnEligibleUntil = null;
+
+      if (deliveredAt) {
+        const deadline = new Date(deliveredAt);
+        deadline.setDate(deadline.getDate() + returnWindowDays);
+        returnEligibleUntil = deadline;
+      }
+
+      return {
+        id: orderId,
+        orderNumber: orderId,
+        placedOn: placedAt,
+        status: order.status,
+        total: pricing.grandTotal ?? 0,
+        items: Array.isArray(order.items) ? order.items.length : 0,
+        itemsCount: Array.isArray(order.items) ? order.items.length : 0,
+        paymentMethod: payment.method ?? "Online payment",
+        expectedDelivery: delivery.estimatedDeliveryDate ?? null,
+        deliveredOn: deliveredAt,
+        trackingNumber: delivery.trackingNumber ?? null,
+        courierService: delivery.courierService ?? null,
+        delivery: {
+          estimatedDeliveryDate: delivery.estimatedDeliveryDate ?? null,
+          deliveryWindow: delivery.deliveryWindow ?? null,
+          actualDeliveryDate: deliveredAt,
+          trackingNumber: delivery.trackingNumber ?? null,
+          courierService: delivery.courierService ?? null,
+        },
+        shipping: {
+          recipient: shipping.recipient ?? null,
+          city: shipping.city ?? null,
+          state: shipping.state ?? null,
+          postalCode: shipping.postalCode ?? null,
+        },
+        timeline,
+        returnEligible: Boolean(deliveredAt && (!returnEligibleUntil || returnEligibleUntil >= new Date())),
+        returnEligibleUntil,
+        returnWindowDays,
+      };
+    }),
     preferences: profile.preferences,
     security: {
       lastPasswordChange: profile.security.lastPasswordChange,

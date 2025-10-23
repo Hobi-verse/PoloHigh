@@ -1,11 +1,12 @@
-const razorpay = require("../config/razorpay");
+// const razorpay = require("../config/razorpay"); // Commented out for Stripe implementation
+const stripe = require("../config/stripe");
 
-// Format amount from rupees to paise
-const formatAmountToPaise = (amount) => {
+// Format amount from rupees to cents (Stripe uses cents for USD, paise for INR)
+const formatAmountToCents = (amount) => {
   return Math.round(amount * 100);
 };
 
-// Format amount from paise to rupees
+// Format amount from cents to rupees
 const formatAmountToRupees = (amount) => {
   return amount / 100;
 };
@@ -68,40 +69,23 @@ const calculateTax = (amount, taxRate = 0.18) => {
   return Math.round(amount * taxRate);
 };
 
-// Validate Razorpay webhook signature
+// Validate Stripe webhook signature
 const validateWebhookSignature = (body, signature, secret) => {
-  const crypto = require("crypto");
-  const expectedSignature = crypto
-    .createHmac("sha256", secret)
-    .update(body)
-    .digest("hex");
-  
-  return signature === expectedSignature;
-};
-
-// Get order status from Razorpay
-const getOrderStatus = async (orderId) => {
   try {
-    const order = await razorpay.orders.fetch(orderId);
-    return {
-      success: true,
-      order,
-    };
+    const event = stripe.webhooks.constructEvent(body, signature, secret);
+    return { valid: true, event };
   } catch (error) {
-    return {
-      success: false,
-      error: error.message,
-    };
+    return { valid: false, error: error.message };
   }
 };
 
-// Get all payments for an order
-const getOrderPayments = async (orderId) => {
+// Get payment intent status from Stripe
+const getPaymentStatus = async (paymentIntentId) => {
   try {
-    const payments = await razorpay.orders.fetchPayments(orderId);
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     return {
       success: true,
-      payments: payments.items,
+      paymentIntent,
     };
   } catch (error) {
     return {
@@ -142,19 +126,19 @@ const generateTrackingNumber = () => {
   return `${prefix}${timestamp.slice(-6)}${random}`;
 };
 
-// Payment retry logic
-const retryPayment = async (paymentId, maxRetries = 3) => {
+// Payment retry logic for Stripe
+const retryPayment = async (paymentIntentId, maxRetries = 3) => {
   let attempt = 0;
   
   while (attempt < maxRetries) {
     try {
-      const payment = await razorpay.payments.fetch(paymentId);
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
       
-      if (payment.status === "captured") {
-        return { success: true, payment };
+      if (paymentIntent.status === "succeeded") {
+        return { success: true, paymentIntent };
       }
       
-      if (payment.status === "failed") {
+      if (paymentIntent.status === "canceled" || paymentIntent.status === "payment_failed") {
         return { success: false, error: "Payment failed permanently" };
       }
       
@@ -174,7 +158,7 @@ const retryPayment = async (paymentId, maxRetries = 3) => {
 };
 
 module.exports = {
-  formatAmountToPaise,
+  formatAmountToCents,
   formatAmountToRupees,
   generateReceiptId,
   validatePaymentAmount,
@@ -182,8 +166,7 @@ module.exports = {
   calculateDeliveryCharges,
   calculateTax,
   validateWebhookSignature,
-  getOrderStatus,
-  getOrderPayments,
+  getPaymentStatus,
   isPaymentMethodAvailable,
   formatCurrency,
   generateTrackingNumber,

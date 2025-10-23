@@ -137,8 +137,15 @@ reviewSchema.methods.removeHelpful = function (userId) {
 
 // Static method to calculate average rating for a product
 reviewSchema.statics.calculateProductRating = async function (productId) {
+  if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
+    return { averageRating: 0, reviewCount: 0 };
+  }
+
+  const targetProductId =
+    typeof productId === "string" ? new mongoose.Types.ObjectId(productId) : productId;
+
   const result = await this.aggregate([
-    { $match: { productId: mongoose.Types.ObjectId(productId), status: "approved" } },
+    { $match: { productId: targetProductId, status: "approved" } },
     {
       $group: {
         _id: "$productId",

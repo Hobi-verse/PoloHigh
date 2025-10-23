@@ -1,5 +1,9 @@
 const Product = require("../models/Product");
 const Category = require("../models/Category");
+const {
+  uploadProductMedia,
+  deleteCloudinaryAssets,
+} = require("../utils/cloudinaryUtils");
 
 // Helper utilities for handling dynamic category creation
 const escapeRegex = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -364,6 +368,31 @@ exports.createProduct = async (req, res) => {
       });
     }
 
+    if (Array.isArray(productData.media) && productData.media.length) {
+      const uploadResult = await uploadProductMedia(productData.media, {
+        slug: productData.slug,
+      });
+
+      productData.media = uploadResult.media;
+
+      if (Array.isArray(productData.variants)) {
+        productData.variants = productData.variants.map((variant) => {
+          if (!variant || !Array.isArray(variant.images)) {
+            return variant;
+          }
+
+          const nextImages = variant.images.map((imageUrl) => {
+            if (!imageUrl) {
+              return imageUrl;
+            }
+            return uploadResult.mapping.get(imageUrl) ?? imageUrl;
+          });
+
+          return { ...variant, images: nextImages };
+        });
+      }
+    }
+
     // Create product
     const product = await Product.create(productData);
 
@@ -435,6 +464,82 @@ exports.updateProduct = async (req, res) => {
 
     delete updateData.customCategoryName;
 
+    const previousMediaRefs = Array.isArray(product.media)
+      ? product.media.map((item) => ({
+        url: item?.url || "",
+        cloudinaryId: item?.cloudinaryId || null,
+        cloudinaryResourceType: item?.cloudinaryResourceType || item?.type || "image",
+      }))
+      : [];
+
+    let removedMedia = [];
+    let mediaUploadResult = null;
+
+    if (Array.isArray(updateData.media)) {
+      if (updateData.media.length > 0) {
+        mediaUploadResult = await uploadProductMedia(updateData.media, {
+          slug: updateData.slug || product.slug,
+        });
+
+        updateData.media = mediaUploadResult.media;
+      }
+
+      const currentMediaList = mediaUploadResult ? mediaUploadResult.media : updateData.media;
+      const currentUrls = new Set(
+        (currentMediaList || [])
+          .map((mediaItem) => mediaItem?.url)
+          .filter((url) => typeof url === "string" && url.length)
+      );
+
+      removedMedia = previousMediaRefs.filter(
+        (mediaItem) => Boolean(mediaItem.cloudinaryId) && !currentUrls.has(mediaItem.url)
+      );
+    }
+
+    if (mediaUploadResult) {
+      const mapping = mediaUploadResult.mapping;
+
+      if (Array.isArray(updateData.variants)) {
+        updateData.variants = updateData.variants.map((variant) => {
+          if (!variant || !Array.isArray(variant.images)) {
+            return variant;
+          }
+
+          const nextImages = variant.images.map((imageUrl) => {
+            if (!imageUrl) {
+              return imageUrl;
+            }
+            return mapping.get(imageUrl) ?? imageUrl;
+          });
+
+          return { ...variant, images: nextImages };
+        });
+      } else {
+        let variantsUpdatedFromMedia = false;
+        product.variants.forEach((variantDoc) => {
+          if (!variantDoc || !Array.isArray(variantDoc.images)) {
+            return;
+          }
+
+          const nextImages = variantDoc.images.map((imageUrl) => {
+            if (!imageUrl) {
+              return imageUrl;
+            }
+            return mapping.get(imageUrl) ?? imageUrl;
+          });
+
+          if (nextImages.some((url, index) => url !== variantDoc.images[index])) {
+            variantDoc.images = nextImages;
+            variantsUpdatedFromMedia = true;
+          }
+        });
+
+        if (variantsUpdatedFromMedia) {
+          product.markModified("variants");
+        }
+      }
+    }
+
     // Update category count if category changed
     if (updateData.category && updateData.category !== product.category) {
       // Decrement old category
@@ -452,6 +557,10 @@ exports.updateProduct = async (req, res) => {
     // Update product
     Object.assign(product, updateData);
     await product.save();
+
+    if (removedMedia.length) {
+      await deleteCloudinaryAssets(removedMedia);
+    }
 
     res.status(200).json({
       success: true,

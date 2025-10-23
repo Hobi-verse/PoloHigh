@@ -1,8 +1,173 @@
+const mongoose = require("mongoose");
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const Address = require("../models/Address");
 const Product = require("../models/Product");
 const User = require("../models/User");
+
+const buildOrderIdentifierQuery = (identifier) =>
+  mongoose.Types.ObjectId.isValid(identifier)
+    ? { _id: identifier }
+    : { orderNumber: identifier };
+
+const ACTIVE_RETURN_STATUSES = new Set([
+  "requested",
+  "approved",
+  "in-transit",
+  "received",
+]);
+
+const FINAL_RETURN_STATUSES = new Set([
+  "completed",
+  "cancelled",
+  "rejected",
+]);
+
+const ALL_RETURN_STATUSES = new Set([
+  ...ACTIVE_RETURN_STATUSES,
+  ...FINAL_RETURN_STATUSES,
+]);
+
+const RETURN_STATUS_TRANSITIONS = {
+  requested: ["approved", "rejected", "cancelled"],
+  approved: ["in-transit", "cancelled"],
+  "in-transit": ["received", "cancelled"],
+  received: ["completed", "cancelled"],
+  rejected: [],
+  completed: [],
+  cancelled: [],
+};
+
+const RETURN_TIMELINE_TITLES = {
+  requested: "Return requested",
+  approved: "Return approved",
+  "in-transit": "Return in transit",
+  received: "Return received",
+  completed: "Return completed",
+  cancelled: "Return cancelled",
+  rejected: "Return rejected",
+};
+
+const RETURN_TIMELINE_DESCRIPTIONS = {
+  requested: "Customer has requested a return for this order.",
+  approved: "Return request approved by the support team.",
+  "in-transit": "Returned items are in transit back to the warehouse.",
+  received: "Returned items have been received and are under inspection.",
+  completed: "Return process completed and resolution applied.",
+  cancelled: "Return request cancelled.",
+  rejected: "Return request rejected.",
+};
+
+const serializeReturnRequest = (returnRequest) => {
+  if (!returnRequest || !returnRequest.status) {
+    return null;
+  }
+
+  const items = Array.isArray(returnRequest.items)
+    ? returnRequest.items.map((item) => ({
+      itemId: item.itemId,
+      productId: item.productId?._id ?? item.productId ?? null,
+      variantSku: item.variantSku ?? null,
+      title: item.title ?? null,
+      quantity: item.quantity ?? null,
+      unitPrice: item.unitPrice ?? null,
+    }))
+    : [];
+
+  return {
+    status: returnRequest.status,
+    reason: returnRequest.reason ?? "",
+    customerNotes: returnRequest.customerNotes ?? "",
+    adminNotes: returnRequest.adminNotes ?? "",
+    resolution: returnRequest.resolution ?? null,
+    refundAmount:
+      typeof returnRequest.refundAmount === "number"
+        ? returnRequest.refundAmount
+        : null,
+    requestedAt: returnRequest.requestedAt ?? null,
+    updatedAt: returnRequest.updatedAt ?? null,
+    resolvedAt: returnRequest.resolvedAt ?? null,
+    processedBy:
+      returnRequest.processedBy?._id ?? returnRequest.processedBy ?? null,
+    items,
+    evidence: Array.isArray(returnRequest.evidence)
+      ? returnRequest.evidence
+      : [],
+  };
+};
+
+const appendReturnTimelineEvent = (order, status, descriptionOverride) => {
+  if (!order.timeline) {
+    order.timeline = [];
+  }
+
+  const timelineArray = Array.isArray(order.timeline)
+    ? order.timeline
+    : [];
+
+  timelineArray.forEach((event) => {
+    if (event.status === "current") {
+      event.status = "complete";
+    }
+  });
+
+  timelineArray.push({
+    title: RETURN_TIMELINE_TITLES[status] || `Return ${status}`,
+    description:
+      descriptionOverride || RETURN_TIMELINE_DESCRIPTIONS[status] || "",
+    status: FINAL_RETURN_STATUSES.has(status) ? "complete" : "current",
+    timestamp: new Date(),
+  });
+
+  order.timeline = timelineArray;
+};
+
+const formatOrderDetail = (order) => {
+  if (!order) {
+    return null;
+  }
+
+  const items = Array.isArray(order.items)
+    ? order.items.map((item) => ({
+      id: item._id,
+      productId: item.productId?._id ?? item.productId ?? null,
+      title: item.title,
+      size: item.size,
+      color: item.color,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      subtotal: item.subtotal,
+      imageUrl: item.imageUrl,
+      discount: item.discount,
+    }))
+    : [];
+
+  return {
+    id: order._id,
+    orderNumber: order.orderNumber,
+    status: order.status,
+    placedAt: order.placedAt,
+    confirmedAt: order.confirmedAt,
+    shippedAt: order.shippedAt,
+    deliveredAt: order.deliveredAt,
+    cancelledAt: order.cancelledAt,
+    items,
+    pricing: order.pricing,
+    shipping: order.shipping ?? null,
+    delivery: order.delivery ?? null,
+    payment: {
+      method: order.payment?.method ?? null,
+      status: order.payment?.status ?? null,
+      transactionId: order.payment?.transactionId ?? null,
+      paidAt: order.payment?.paidAt ?? null,
+    },
+    timeline: Array.isArray(order.timeline) ? order.timeline : [],
+    customer: order.customer ?? null,
+    support: order.support ?? null,
+    notes: order.notes ?? {},
+    returnRequest: serializeReturnRequest(order.returnRequest),
+  };
+};
 
 /**
  * @desc    Create new order from cart
@@ -346,6 +511,7 @@ exports.getOrders = async (req, res) => {
         status: order.payment.status,
         transactionId: order.payment.transactionId,
       },
+      returnRequest: serializeReturnRequest(order.returnRequest),
     }));
 
     res.json({
@@ -380,7 +546,10 @@ exports.getOrderById = async (req, res) => {
     const userId = req.user._id;
     const { id } = req.params;
 
-    const order = await Order.findOne({ _id: id, userId })
+    const order = await Order.findOne({
+      ...buildOrderIdentifierQuery(id),
+      userId,
+    })
       .populate("items.productId", "title slug category media")
       .lean();
 
@@ -392,41 +561,7 @@ exports.getOrderById = async (req, res) => {
     }
 
     // Format order for response
-    const formattedOrder = {
-      id: order._id,
-      orderNumber: order.orderNumber,
-      status: order.status,
-      placedAt: order.placedAt,
-      confirmedAt: order.confirmedAt,
-      shippedAt: order.shippedAt,
-      deliveredAt: order.deliveredAt,
-      cancelledAt: order.cancelledAt,
-      items: order.items.map((item) => ({
-        id: item._id,
-        productId: item.productId?._id,
-        title: item.title,
-        size: item.size,
-        color: item.color,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        subtotal: item.subtotal,
-        imageUrl: item.imageUrl,
-        discount: item.discount,
-      })),
-      pricing: order.pricing,
-      shipping: order.shipping,
-      delivery: order.delivery,
-      payment: {
-        method: order.payment.method,
-        status: order.payment.status,
-        transactionId: order.payment.transactionId,
-        paidAt: order.payment.paidAt,
-      },
-      timeline: order.timeline,
-      customer: order.customer,
-      support: order.support,
-      notes: order.notes,
-    };
+    const formattedOrder = formatOrderDetail(order);
 
     res.json({
       success: true,
@@ -454,7 +589,7 @@ exports.updateOrderStatus = async (req, res) => {
     const { id } = req.params;
     const { status, trackingNumber, courierService } = req.body;
 
-    const order = await Order.findById(id);
+    const order = await Order.findOne(buildOrderIdentifierQuery(id));
 
     if (!order) {
       return res.status(404).json({
@@ -530,7 +665,10 @@ exports.cancelOrder = async (req, res) => {
     const { id } = req.params;
     const { reason } = req.body;
 
-    const order = await Order.findOne({ _id: id, userId });
+    const order = await Order.findOne({
+      ...buildOrderIdentifierQuery(id),
+      userId,
+    });
 
     if (!order) {
       return res.status(404).json({
@@ -598,6 +736,179 @@ exports.cancelOrder = async (req, res) => {
 };
 
 /**
+ * @desc    Request return for an order
+ * @route   POST /api/orders/:id/return
+ * @access  Private
+ */
+exports.requestReturn = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { id } = req.params;
+    const { items = [], reason, customerNotes, evidence = [] } = req.body;
+
+    const normalizedReason =
+      typeof reason === "string" ? reason.trim() : "";
+    const normalizedCustomerNotes =
+      typeof customerNotes === "string" ? customerNotes.trim() : "";
+
+    if (!normalizedReason) {
+      return res.status(400).json({
+        success: false,
+        message: "Return reason is required",
+      });
+    }
+
+    const order = await Order.findOne({
+      ...buildOrderIdentifierQuery(id),
+      userId,
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (order.status !== "delivered") {
+      return res.status(400).json({
+        success: false,
+        message: "Only delivered orders can be returned",
+      });
+    }
+
+    const existingReturnStatus = order.returnRequest?.status;
+    if (existingReturnStatus && ACTIVE_RETURN_STATUSES.has(existingReturnStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "Return request already in progress for this order",
+      });
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one item must be provided for return",
+      });
+    }
+
+    const sanitizedItems = [];
+    const seenItemIds = new Set();
+
+    for (const payload of items) {
+      const itemId = payload.itemId;
+      if (!itemId) {
+        return res.status(400).json({
+          success: false,
+          message: "Return item identifier is required",
+        });
+      }
+
+      if (seenItemIds.has(itemId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Duplicate items are not allowed in return request",
+        });
+      }
+      seenItemIds.add(itemId);
+
+      const orderItem = order.items.id(itemId);
+      if (!orderItem) {
+        return res.status(400).json({
+          success: false,
+          message: "One or more items selected for return are invalid",
+        });
+      }
+
+      let quantity = orderItem.quantity;
+      if (typeof payload.quantity !== "undefined") {
+        quantity = Number(payload.quantity);
+        if (!Number.isInteger(quantity)) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid quantity provided for ${orderItem.title}`,
+          });
+        }
+      }
+
+      if (quantity < 1 || quantity > orderItem.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Return quantity for ${orderItem.title} must be between 1 and ${orderItem.quantity}`,
+        });
+      }
+
+      sanitizedItems.push({
+        itemId: orderItem._id,
+        productId: orderItem.productId,
+        variantSku: orderItem.variantSku,
+        title: orderItem.title,
+        quantity,
+        unitPrice: orderItem.unitPrice,
+      });
+    }
+
+    const sanitizedEvidence = Array.isArray(evidence)
+      ? evidence
+        .filter((entry) => typeof entry === "string")
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0)
+      : [];
+
+    const now = new Date();
+
+    order.returnRequest = {
+      status: "requested",
+      reason: normalizedReason,
+      customerNotes: normalizedCustomerNotes,
+      adminNotes: null,
+      resolution: null,
+      requestedAt: now,
+      updatedAt: now,
+      resolvedAt: null,
+      processedBy: null,
+      items: sanitizedItems,
+      evidence: sanitizedEvidence,
+    };
+
+    order.markModified("returnRequest");
+
+    appendReturnTimelineEvent(
+      order,
+      "requested",
+      normalizedCustomerNotes || normalizedReason
+    );
+    order.markModified("timeline");
+
+    await order.save();
+
+    const refreshedOrder = await Order.findOne({
+      _id: order._id,
+      userId,
+    })
+      .populate("items.productId", "title slug category media")
+      .lean();
+
+    const formattedOrder = formatOrderDetail(refreshedOrder);
+
+    res.status(201).json({
+      success: true,
+      message: "Return request submitted successfully",
+      data: {
+        order: formattedOrder,
+      },
+    });
+  } catch (error) {
+    console.error("Request return error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to submit return request",
+      error: error.message,
+    });
+  }
+};
+
+/**
  * @desc    Get order statistics
  * @route   GET /api/orders/stats
  * @access  Private
@@ -657,6 +968,131 @@ exports.getOrderStats = async (req, res) => {
 };
 
 /**
+ * @desc    Update return request status (Admin)
+ * @route   PATCH /api/orders/:id/return
+ * @access  Private (Admin)
+ */
+exports.updateReturnRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, adminNotes, resolution, refundAmount, evidence } = req.body;
+    const adminId = req.user._id;
+
+    const order = await Order.findOne(buildOrderIdentifierQuery(id));
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (!order.returnRequest || !order.returnRequest.status) {
+      return res.status(400).json({
+        success: false,
+        message: "No return request found for this order",
+      });
+    }
+
+    const currentStatus = order.returnRequest.status;
+    const normalizedStatus =
+      typeof status === "string" ? status.trim() : status;
+    if (!ALL_RETURN_STATUSES.has(normalizedStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid return status provided",
+      });
+    }
+    const allowedTransitions = RETURN_STATUS_TRANSITIONS[currentStatus] || [];
+
+    if (
+      normalizedStatus !== currentStatus &&
+      !allowedTransitions.includes(normalizedStatus)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot transition return request from ${currentStatus} to ${normalizedStatus}`,
+      });
+    }
+
+    const now = new Date();
+    const notesProvided = typeof adminNotes !== "undefined";
+    const resolutionProvided = typeof resolution !== "undefined";
+    const refundProvided = typeof refundAmount !== "undefined";
+    const evidenceProvided = Array.isArray(evidence);
+
+    if (normalizedStatus !== currentStatus) {
+      appendReturnTimelineEvent(order, normalizedStatus, adminNotes);
+      order.markModified("timeline");
+    }
+
+    order.returnRequest.status = normalizedStatus;
+    order.returnRequest.updatedAt = now;
+    order.returnRequest.processedBy = adminId;
+
+    if (notesProvided) {
+      order.returnRequest.adminNotes = adminNotes;
+    }
+
+    if (resolutionProvided) {
+      order.returnRequest.resolution = resolution;
+    }
+
+    if (refundProvided) {
+      if (refundAmount === null) {
+        order.returnRequest.refundAmount = undefined;
+      } else {
+        const numericRefund = Number(refundAmount);
+        if (Number.isNaN(numericRefund)) {
+          return res.status(400).json({
+            success: false,
+            message: "Refund amount must be a valid number",
+          });
+        }
+        order.returnRequest.refundAmount = numericRefund;
+      }
+    }
+
+    if (evidenceProvided) {
+      order.returnRequest.evidence = evidence
+        .filter((entry) => typeof entry === "string")
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0);
+    }
+
+    if (FINAL_RETURN_STATUSES.has(normalizedStatus)) {
+      order.returnRequest.resolvedAt = now;
+    } else if (FINAL_RETURN_STATUSES.has(currentStatus)) {
+      order.returnRequest.resolvedAt = null;
+    }
+
+    order.markModified("returnRequest");
+
+    await order.save();
+
+    res.json({
+      success: true,
+      message: "Return request updated successfully",
+      data: {
+        order: {
+          id: order._id,
+          orderNumber: order.orderNumber,
+          status: order.status,
+          returnRequest: serializeReturnRequest(order.returnRequest),
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Update return request error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update return request",
+      error: error.message,
+    });
+  }
+};
+
+/**
  * @desc    Get all orders (Admin)
  * @route   GET /api/orders/admin/all
  * @access  Private (Admin)
@@ -670,6 +1106,7 @@ exports.getAllOrders = async (req, res) => {
       sortBy = "placedAt",
       sortOrder = "desc",
       search,
+      returnStatus,
     } = req.query;
 
     // Build filter
@@ -684,6 +1121,11 @@ exports.getAllOrders = async (req, res) => {
         { "customer.name": new RegExp(search, "i") },
       ];
     }
+    const normalizedReturnStatus =
+      typeof returnStatus === "string" ? returnStatus.trim() : "";
+    if (normalizedReturnStatus && ALL_RETURN_STATUSES.has(normalizedReturnStatus)) {
+      filter["returnRequest.status"] = normalizedReturnStatus;
+    }
 
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -694,7 +1136,7 @@ exports.getAllOrders = async (req, res) => {
       .sort({ [sortBy]: sortDirection })
       .skip(skip)
       .limit(parseInt(limit))
-      .populate("userId", "name email")
+      .populate("userId", "fullName email mobileNumber role")
       .lean();
 
     // Get total count
@@ -706,13 +1148,49 @@ exports.getAllOrders = async (req, res) => {
       orderNumber: order.orderNumber,
       status: order.status,
       placedAt: order.placedAt,
-      customer: order.customer,
-      itemCount: order.items.length,
+      updatedAt: order.updatedAt,
+      customer: {
+        id: order.userId?._id ?? order.customer?.id ?? null,
+        name:
+          order.customer?.name ??
+          order.userId?.fullName ??
+          order.userId?.name ??
+          null,
+        email: order.customer?.email ?? order.userId?.email ?? null,
+        phone:
+          order.customer?.phone ??
+          order.userId?.mobileNumber ??
+          order.userId?.phone ??
+          null,
+      },
+      itemCount: Array.isArray(order.items) ? order.items.length : 0,
+      items: Array.isArray(order.items)
+        ? order.items.map((item) => ({
+          id: item._id,
+          productId: item.productId,
+          variantSku: item.variantSku,
+          title: item.title,
+          size: item.size,
+          color: item.color,
+          unitPrice: item.unitPrice,
+          quantity: item.quantity,
+          subtotal: item.subtotal,
+          imageUrl: item.imageUrl,
+        }))
+        : [],
       pricing: order.pricing,
       payment: {
-        method: order.payment.method,
-        status: order.payment.status,
+        method: order.payment?.method ?? null,
+        status: order.payment?.status ?? null,
+        transactionId: order.payment?.transactionId ?? null,
+        paidAt: order.payment?.paidAt ?? null,
       },
+      shipping: order.shipping ?? null,
+      delivery: order.delivery ?? null,
+      timeline: Array.isArray(order.timeline) ? order.timeline : [],
+      notes: order.notes ?? {},
+      support: order.support ?? {},
+      returnRequest: serializeReturnRequest(order.returnRequest),
     }));
 
     res.json({
@@ -747,7 +1225,7 @@ exports.confirmPayment = async (req, res) => {
     const { id } = req.params;
     const { transactionId } = req.body;
 
-    const order = await Order.findById(id);
+    const order = await Order.findOne(buildOrderIdentifierQuery(id));
 
     if (!order) {
       return res.status(404).json({

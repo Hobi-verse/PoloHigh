@@ -1,6 +1,23 @@
 const { body, param, validationResult } = require("express-validator");
 const mongoose = require("mongoose");
 
+const ORDER_NUMBER_REGEX = /^[A-Z]{3,5}-\d{4}-\d{4,}$/;
+const RETURN_STATUS_OPTIONS = [
+  "requested",
+  "approved",
+  "rejected",
+  "in-transit",
+  "received",
+  "completed",
+  "cancelled",
+];
+const RETURN_RESOLUTION_OPTIONS = [
+  "refund",
+  "replacement",
+  "store-credit",
+  "exchange",
+];
+
 /**
  * Validation middleware for creating an order
  */
@@ -170,8 +187,19 @@ exports.validateCancelOrder = [
  */
 exports.validateOrderId = [
   param("id")
-    .custom((value) => mongoose.Types.ObjectId.isValid(value))
-    .withMessage("Invalid order ID format"),
+    .custom((value, { req }) => {
+      if (mongoose.Types.ObjectId.isValid(value)) {
+        return true;
+      }
+
+      const normalizedIdentifier = value.toUpperCase();
+      if (ORDER_NUMBER_REGEX.test(normalizedIdentifier)) {
+        req.params.id = normalizedIdentifier;
+        return true;
+      }
+
+      throw new Error("Invalid order identifier format");
+    }),
 
   // Middleware to check validation results
   (req, res, next) => {
@@ -200,6 +228,125 @@ exports.validateConfirmPayment = [
     .withMessage("Transaction ID must be a string")
     .isLength({ min: 5, max: 100 })
     .withMessage("Transaction ID must be between 5 and 100 characters"),
+
+  // Middleware to check validation results
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: errors.array().map((err) => ({
+          field: err.path,
+          message: err.msg,
+        })),
+      });
+    }
+    next();
+  },
+];
+
+exports.validateReturnRequest = [
+  body("items")
+    .isArray({ min: 1 })
+    .withMessage("At least one item must be selected for return"),
+
+  body("items.*.itemId")
+    .notEmpty()
+    .withMessage("Return item identifier is required")
+    .custom((value) => mongoose.Types.ObjectId.isValid(value))
+    .withMessage("Invalid return item identifier"),
+
+  body("items.*.quantity")
+    .optional()
+    .toInt()
+    .isInt({ min: 1 })
+    .withMessage("Return quantity must be at least 1"),
+
+  body("reason")
+    .notEmpty()
+    .withMessage("Return reason is required")
+    .isString()
+    .withMessage("Return reason must be a string")
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage("Return reason cannot exceed 500 characters"),
+
+  body("customerNotes")
+    .optional()
+    .isString()
+    .withMessage("Customer notes must be a string")
+    .trim()
+    .isLength({ max: 1000 })
+    .withMessage("Customer notes cannot exceed 1000 characters"),
+
+  body("evidence")
+    .optional()
+    .isArray()
+    .withMessage("Evidence must be an array of URLs or identifiers"),
+
+  body("evidence.*")
+    .optional()
+    .isString()
+    .withMessage("Each evidence entry must be a string"),
+
+  // Middleware to check validation results
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: errors.array().map((err) => ({
+          field: err.path,
+          message: err.msg,
+        })),
+      });
+    }
+    next();
+  },
+];
+
+exports.validateUpdateReturnStatus = [
+  body("status")
+    .notEmpty()
+    .withMessage("Return status is required")
+    .isString()
+    .withMessage("Return status must be a string")
+    .trim()
+    .isIn(RETURN_STATUS_OPTIONS.filter((status) => status !== "requested"))
+    .withMessage("Invalid return status"),
+
+  body("adminNotes")
+    .optional()
+    .isString()
+    .withMessage("Admin notes must be a string")
+    .trim()
+    .isLength({ max: 1000 })
+    .withMessage("Admin notes cannot exceed 1000 characters"),
+
+  body("resolution")
+    .optional()
+    .isString()
+    .withMessage("Resolution must be a string")
+    .trim()
+    .isIn(RETURN_RESOLUTION_OPTIONS)
+    .withMessage("Invalid resolution option"),
+
+  body("refundAmount")
+    .optional({ nullable: true })
+    .isFloat({ min: 0 })
+    .withMessage("Refund amount must be a positive number"),
+
+  body("evidence")
+    .optional()
+    .isArray()
+    .withMessage("Evidence must be an array"),
+
+  body("evidence.*")
+    .optional()
+    .isString()
+    .withMessage("Each evidence entry must be a string"),
 
   // Middleware to check validation results
   (req, res, next) => {

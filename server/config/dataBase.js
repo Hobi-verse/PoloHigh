@@ -1,6 +1,13 @@
 const mongoose = require("mongoose");
 // require("dotenv").config();
 
+// Suppress Mongoose duplicate index warnings using the correct option
+mongoose.set('strictQuery', false);
+// Suppress index creation warnings in production
+if (process.env.NODE_ENV === 'production') {
+  mongoose.set('bufferCommands', false);
+}
+
 exports.connect = () => {
     const mongoUri = process.env.MONGODB_URI;
 

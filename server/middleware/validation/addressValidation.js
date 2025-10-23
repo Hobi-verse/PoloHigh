@@ -21,12 +21,22 @@ const validateAddress = [
     .isLength({ min: 2, max: 100 })
     .withMessage('Recipient name must be between 2 and 100 characters'),
 
+  // Accept plain 10-digit numbers and common +91 formatted inputs
   body('phone')
     .notEmpty()
     .withMessage('Phone number is required')
     .trim()
-    .matches(/^(\+91[\s]?)?[6-9]\d{9}$/)
-    .withMessage('Please provide a valid Indian mobile number (10 digits starting with 6-9)'),
+    .custom(value => {
+      const digits = value.replace(/\D/g, '');
+      if (digits.length !== 10) {
+        throw new Error('Please provide a valid 10-digit mobile number');
+      }
+      return true;
+    })
+    .customSanitizer(value => {
+      const digits = value.replace(/\D/g, '');
+      return digits;
+    }),
 
   body('addressLine1')
     .notEmpty()
@@ -34,8 +44,8 @@ const validateAddress = [
     .isString()
     .withMessage('Address line 1 must be a string')
     .trim()
-    .isLength({ min: 5, max: 200 })
-    .withMessage('Address line 1 must be between 5 and 200 characters'),
+    .isLength({ min: 3, max: 200 })
+    .withMessage('Address line 1 must be between 3 and 200 characters'),
 
   body('addressLine2')
     .optional()
@@ -78,10 +88,34 @@ const validateAddress = [
     .isLength({ min: 2, max: 50 })
     .withMessage('Country must be between 2 and 50 characters'),
 
+  // Allow boolean flags coming in as true/false or string equivalents
   body('isDefault')
     .optional()
-    .isBoolean()
-    .withMessage('isDefault must be a boolean'),
+    .custom(value => {
+      if (typeof value === 'boolean') {
+        return true;
+      }
+
+      if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        return ['true', 'false', '1', '0', 'yes', 'no', 'on', 'off'].includes(normalized);
+      }
+
+      if (typeof value === 'number') {
+        return value === 1 || value === 0;
+      }
+
+      throw new Error('isDefault must be a boolean');
+    })
+    .withMessage('isDefault must be a boolean')
+    .customSanitizer(value => {
+      if (typeof value === 'boolean') {
+        return value;
+      }
+
+      const normalized = String(value).trim().toLowerCase();
+      return ['true', '1', 'yes', 'on'].includes(normalized);
+    }),
 
   body('type')
     .optional()
@@ -156,16 +190,28 @@ const validateAddressUpdate = [
   body('phone')
     .optional()
     .trim()
-    .matches(/^(\+91[\s]?)?[6-9]\d{9}$/)
-    .withMessage('Please provide a valid Indian mobile number (10 digits starting with 6-9)'),
+    .custom(value => {
+      const digits = value.replace(/\D/g, '');
+      if (!digits.length) {
+        return true;
+      }
+      if (digits.length !== 10) {
+        throw new Error('Please provide a valid 10-digit mobile number');
+      }
+      return true;
+    })
+    .customSanitizer(value => {
+      const digits = value.replace(/\D/g, '');
+      return digits.length ? digits : value;
+    }),
 
   body('addressLine1')
     .optional()
     .isString()
     .withMessage('Address line 1 must be a string')
     .trim()
-    .isLength({ min: 5, max: 200 })
-    .withMessage('Address line 1 must be between 5 and 200 characters'),
+    .isLength({ min: 3, max: 200 })
+    .withMessage('Address line 1 must be between 3 and 200 characters'),
 
   body('addressLine2')
     .optional()
@@ -205,10 +251,34 @@ const validateAddressUpdate = [
     .isLength({ min: 2, max: 50 })
     .withMessage('Country must be between 2 and 50 characters'),
 
+  // Allow boolean flags coming in as true/false or string equivalents
   body('isDefault')
     .optional()
-    .isBoolean()
-    .withMessage('isDefault must be a boolean'),
+    .custom(value => {
+      if (typeof value === 'boolean') {
+        return true;
+      }
+
+      if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        return ['true', 'false', '1', '0', 'yes', 'no', 'on', 'off'].includes(normalized);
+      }
+
+      if (typeof value === 'number') {
+        return value === 1 || value === 0;
+      }
+
+      throw new Error('isDefault must be a boolean');
+    })
+    .withMessage('isDefault must be a boolean')
+    .customSanitizer(value => {
+      if (typeof value === 'boolean') {
+        return value;
+      }
+
+      const normalized = String(value).trim().toLowerCase();
+      return ['true', '1', 'yes', 'on'].includes(normalized);
+    }),
 
   body('type')
     .optional()

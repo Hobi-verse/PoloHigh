@@ -434,13 +434,15 @@ exports.deleteReview = async (req, res) => {
     await review.deleteOne();
 
     // Recalculate product rating
-    const { averageRating, reviewCount } =
-      await Review.calculateProductRating(review.productId);
+    if (review.productId && mongoose.Types.ObjectId.isValid(review.productId)) {
+      const { averageRating, reviewCount } =
+        await Review.calculateProductRating(review.productId);
 
-    await Product.findByIdAndUpdate(review.productId, {
-      averageRating,
-      reviewCount,
-    });
+      await Product.findByIdAndUpdate(review.productId, {
+        averageRating,
+        reviewCount,
+      });
+    }
 
     res.json({
       success: true,

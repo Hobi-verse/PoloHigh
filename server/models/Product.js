@@ -62,6 +62,13 @@ const mediaSchema = new mongoose.Schema({
     enum: ["image", "video"],
     default: "image",
   },
+  cloudinaryId: {
+    type: String,
+  },
+  cloudinaryResourceType: {
+    type: String,
+    enum: ["image", "video", "raw"],
+  },
 });
 
 // Schema for product specifications
@@ -233,6 +240,7 @@ const productSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    collection: "product",
   }
 );
 

@@ -153,8 +153,7 @@ const couponSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
-couponSchema.index({ code: 1 });
+// Indexes (code index is already created by unique: true)
 couponSchema.index({ isActive: 1 });
 couponSchema.index({ "validity.startDate": 1, "validity.endDate": 1 });
 

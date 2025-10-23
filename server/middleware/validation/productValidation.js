@@ -1,7 +1,7 @@
 // Product validation middleware
 exports.validateProduct = (req, res, next) => {
   const errors = [];
-  const { slug, title, category, basePrice, variants, customCategoryName } = req.body;
+  const { slug, title, category, basePrice, variants, customCategoryName, targetGender } = req.body;
 
   // Required fields
   if (!slug || slug.trim() === "") {
@@ -12,6 +12,12 @@ exports.validateProduct = (req, res, next) => {
 
   if (!title || title.trim() === "") {
     errors.push("Product title is required");
+  }
+
+  // Validate targetGender
+  const validGenders = ["Men", "Women", "Kids", "Unisex"];
+  if (!targetGender || !validGenders.includes(targetGender)) {
+    errors.push("Target gender is required and must be one of: Men, Women, Kids, Unisex");
   }
 
   if (!category || category.trim() === "") {
@@ -94,7 +100,15 @@ exports.validateProduct = (req, res, next) => {
 // Product update validation (fields are optional)
 exports.validateProductUpdate = (req, res, next) => {
   const errors = [];
-  const { slug, basePrice, variants, category, customCategoryName } = req.body;
+  const { slug, basePrice, variants, category, customCategoryName, targetGender } = req.body;
+
+  // Validate targetGender if provided
+  if (targetGender !== undefined) {
+    const validGenders = ["Men", "Women", "Kids", "Unisex"];
+    if (!validGenders.includes(targetGender)) {
+      errors.push("Target gender must be one of: Men, Women, Kids, Unisex");
+    }
+  }
 
   // Validate slug format if provided
   if (slug !== undefined) {

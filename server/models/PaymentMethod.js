@@ -13,7 +13,7 @@ const paymentMethodSchema = new mongoose.Schema(
     // Payment method type
     type: {
       type: String,
-      enum: ["card", "upi", "wallet", "netbanking", "cod"],
+      enum: ["card", "upi", "wallet", "netbanking", "cod", "sepa_debit", "ideal", "sofort", "bancontact", "giropay", "eps", "p24", "alipay", "wechat_pay"],
       required: true,
     },
 
@@ -57,8 +57,20 @@ const paymentMethodSchema = new mongoose.Schema(
       min: 0,
     },
 
-    // Tokenized payment identifier (from payment gateway)
+    // Tokenized payment identifier (from payment gateway - Stripe Payment Method ID)
     paymentToken: {
+      type: String,
+      trim: true,
+    },
+
+    // Stripe specific fields
+    stripePaymentMethodId: {
+      type: String,
+      trim: true,
+    },
+
+    // Stripe customer ID
+    stripeCustomerId: {
       type: String,
       trim: true,
     },
@@ -101,7 +113,7 @@ paymentMethodSchema.index({ userId: 1, type: 1 });
 paymentMethodSchema.virtual("displayName").get(function () {
   switch (this.type) {
     case "card":
-      return `${this.brand} •••• ${this.last4}`;
+      return `${this.brand || 'Card'} •••• ${this.last4}`;
     case "upi":
       return this.upiHandle || "UPI";
     case "wallet":
@@ -110,6 +122,24 @@ paymentMethodSchema.virtual("displayName").get(function () {
       return this.brand || "Net Banking";
     case "cod":
       return "Cash on Delivery";
+    case "sepa_debit":
+      return `SEPA Debit •••• ${this.last4}`;
+    case "ideal":
+      return "iDEAL";
+    case "sofort":
+      return "SOFORT";
+    case "bancontact":
+      return "Bancontact";
+    case "giropay":
+      return "Giropay";
+    case "eps":
+      return "EPS";
+    case "p24":
+      return "Przelewy24";
+    case "alipay":
+      return "Alipay";
+    case "wechat_pay":
+      return "WeChat Pay";
     default:
       return this.type;
   }
