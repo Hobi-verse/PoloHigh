@@ -166,8 +166,8 @@ exports.createOrder = async (req, res) => {
         addressId: shippingAddress._id,
       },
       delivery: {
-        estimatedDeliveryDate: this.calculateEstimatedDelivery(),
-        deliveryWindow: this.getDeliveryWindow(),
+        estimatedDeliveryDate: calculateEstimatedDelivery(),
+        deliveryWindow: getDeliveryWindow(),
       },
       timeline: [
         {
@@ -187,9 +187,9 @@ exports.createOrder = async (req, res) => {
         },
       ],
       customer: {
-        name: user.name,
+        name: user.fullName || user.email || shippingAddress.recipient,
         email: user.email,
-        phone: user.phone || shippingAddress.phone,
+        phone: user.mobileNumber || shippingAddress.phone,
       },
       notes: {
         customerNotes: customerNotes || "",

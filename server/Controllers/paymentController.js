@@ -83,7 +83,7 @@ const verifyPaymentAndCreateOrder = async (req, res) => {
 
     // Fetch payment details from Razorpay
     const payment = await razorpay.payments.fetch(razorpay_payment_id);
-    
+
     if (payment.status !== "captured") {
       return res.status(400).json({
         success: false,
@@ -130,7 +130,7 @@ const verifyPaymentAndCreateOrder = async (req, res) => {
     if (couponCode) {
       const Coupon = require("../models/Coupon");
       const coupon = await Coupon.findOne({ code: couponCode, isActive: true });
-      
+
       if (coupon && coupon.isValidForUser(userId) && coupon.isValidForAmount(subtotal)) {
         discount = coupon.calculateDiscount(subtotal);
         couponData = {
@@ -193,7 +193,7 @@ const verifyPaymentAndCreateOrder = async (req, res) => {
       },
       coupon: couponData,
       shipping: {
-        recipient: shippingAddress.name,
+        recipient: shippingAddress.recipient,
         phone: shippingAddress.phone,
         addressLine1: shippingAddress.addressLine1,
         addressLine2: shippingAddress.addressLine2,
@@ -201,7 +201,7 @@ const verifyPaymentAndCreateOrder = async (req, res) => {
         state: shippingAddress.state,
         postalCode: shippingAddress.postalCode,
         country: shippingAddress.country,
-        instructions: shippingAddress.instructions,
+        instructions: shippingAddress.deliveryInstructions,
         addressId: shippingAddress._id,
       },
       delivery: {
@@ -209,9 +209,9 @@ const verifyPaymentAndCreateOrder = async (req, res) => {
         deliveryWindow: "9 AM - 9 PM",
       },
       customer: {
-        name: user.name,
+        name: user.fullName || user.email || shippingAddress.recipient,
         email: user.email,
-        phone: user.phone,
+        phone: user.mobileNumber || shippingAddress.phone,
       },
       notes: {
         customerNotes: customerNotes || "",
@@ -354,7 +354,7 @@ const refundPayment = async (req, res) => {
 
     // Fetch original payment
     const payment = await razorpay.payments.fetch(paymentId);
-    
+
     if (!payment) {
       return res.status(404).json({
         success: false,
@@ -364,7 +364,7 @@ const refundPayment = async (req, res) => {
 
     // Create refund
     const refundAmount = amount ? amount * 100 : payment.amount; // Full refund if amount not specified
-    
+
     const refund = await razorpay.payments.refund(paymentId, {
       amount: refundAmount,
       notes: notes || {},
@@ -406,7 +406,7 @@ const handleWebhook = async (req, res) => {
   try {
     const signature = req.headers["x-razorpay-signature"];
     const body = JSON.stringify(req.body);
-    
+
     // Verify webhook signature
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET)
@@ -421,23 +421,23 @@ const handleWebhook = async (req, res) => {
     }
 
     const event = req.body;
-    
+
     switch (event.event) {
       case "payment.captured":
         // Handle successful payment
         console.log("Payment captured:", event.payload.payment.entity);
         break;
-        
+
       case "payment.failed":
         // Handle failed payment
         console.log("Payment failed:", event.payload.payment.entity);
         break;
-        
+
       case "refund.processed":
         // Handle refund processed
         console.log("Refund processed:", event.payload.refund.entity);
         break;
-        
+
       default:
         console.log("Unhandled webhook event:", event.event);
     }
