@@ -1,141 +1,69 @@
-import "./App.css";
-import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import HomePage from "./pages/user/HomePage.jsx";
-import ProductDetailsPage from "./pages/user/ProductDetailsPage.jsx";
-import CartPage from "./pages/user/CartPage.jsx";
-import WishlistPage from "./pages/user/WishlistPage.jsx";
-import CheckoutPage from "./pages/user/CheckoutPage.jsx";
-import ConfirmationPage from "./pages/user/ConfirmationPage.jsx";
-import MyAccountPage from "./pages/user/MyAccountPage.jsx";
-import Login from "./pages/auth/Login.jsx";
-import Register from "./pages/auth/Register.jsx";
-import ForgetPass from "./pages/auth/ForgetPass.jsx";
-import AdminDashboardLayout from "./components/admin/common/AdminDashboardLayout.jsx";
-import Dashboard from "./components/admin/dashboard.jsx";
-import Orders from "./components/admin/orders/Orders.jsx";
-import Products from "./pages/admin/Products.jsx";
-import Customers from "./components/admin/customers/Customers.jsx";
-import Reports from "./components/admin/reports/Reports.jsx";
-import Users from "./components/admin/users/Users.jsx";
-import Coupons from "./pages/admin/Coupons.jsx";
-import ProtectedRoute from "./components/common/ProtectedRoute.jsx";
-import { SpeedInsights } from '@vercel/speed-insights/react';
-import {
-  AUTH_SESSION_EVENT,
-  AUTH_STORAGE_KEYS,
-  getStoredAuthSession,
-} from "./utils/authStorage";
+import { SpeedInsights } from "@vercel/speed-insights/react";
+import SiteHeader from "./components/layout/SiteHeader";
+import SiteFooter from "./components/layout/SiteFooter";
+import ProtectedRoute from "./components/common/ProtectedRoute";
+import useAuthSession from "./hooks/useAuthSession";
+import HomePage from "./pages/store/HomePage";
+import CatalogPage from "./pages/store/CatalogPage";
+import ProductPage from "./pages/store/ProductPage";
+import CartPage from "./pages/store/CartPage";
+import WishlistPage from "./pages/store/WishlistPage";
+import CheckoutPage from "./pages/store/CheckoutPage";
+import AccountPage from "./pages/store/AccountPage";
+import LoginPage from "./pages/auth/LoginPage";
+import SignupPage from "./pages/auth/SignupPage";
 
-function App() {
-  const [authSession, setAuthSession] = useState(() => getStoredAuthSession());
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const handleSessionEvent = (event) => {
-      const detail = event?.detail ?? {};
-      setAuthSession({
-        token: detail.token ?? null,
-        user: detail.user ?? null,
-      });
-    };
-
-    const handleStorage = (event) => {
-      if (!event) {
-        return;
-      }
-
-      const relevantKeys = [
-        AUTH_STORAGE_KEYS.token,
-        AUTH_STORAGE_KEYS.user,
-        null,
-      ];
-
-      if (!relevantKeys.includes(event.key)) {
-        return;
-      }
-
-      setAuthSession(getStoredAuthSession());
-    };
-
-    window.addEventListener(AUTH_SESSION_EVENT, handleSessionEvent);
-    window.addEventListener("storage", handleStorage);
-
-    return () => {
-      window.removeEventListener(AUTH_SESSION_EVENT, handleSessionEvent);
-      window.removeEventListener("storage", handleStorage);
-    };
-  }, []);
-
-  const isLoggedIn = !!authSession.token;
+const App = () => {
+  const session = useAuthSession();
+  const isLoggedIn = Boolean(session?.token);
+  const userName = session?.user?.fullName || session?.user?.name || "";
 
   return (
-    <div className="min-h-screen bg-[#07150f]">
-      <Routes>
-        <Route path="/" element={<HomePage isLoggedIn={isLoggedIn} />} />
-        <Route
-          path="/products/:productId"
-          element={<ProductDetailsPage isLoggedIn={isLoggedIn} />}
-        />
-        <Route path="/cart" element={<CartPage isLoggedIn={isLoggedIn} />} />
-        <Route
-          path="/wishlist"
-          element={<WishlistPage isLoggedIn={isLoggedIn} />}
-        />
-        <Route
-          path="/checkout"
-          element={<CheckoutPage isLoggedIn={isLoggedIn} />}
-        />
-        <Route
-          path="/confirmation"
-          element={<ConfirmationPage isLoggedIn={isLoggedIn} />}
-        />
-        <Route
-          path="/account"
-          element={
-            <ProtectedRoute
-              session={authSession}
-              allowedRoles={["customer"]}
-              forbiddenPath="/admin/dashboard"
-            >
-              <MyAccountPage isLoggedIn={isLoggedIn} />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute
-              session={authSession}
-              allowedRoles={["admin"]}
-              forbiddenPath="/account"
-            >
-              <AdminDashboardLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Dashboard />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="orders" element={<Orders />} />
-          <Route path="products" element={<Products />} />
-          <Route path="customers" element={<Customers />} />
-          <Route path="coupons" element={<Coupons />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="users" element={<Users />} />
-          <Route path="*" element={<Navigate to="dashboard" replace />} />
-        </Route>
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Register />} />
-        <Route path="/forget-password" element={<ForgetPass />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+    <div className="app-shell">
+      <div className="app-frame">
+        <SiteHeader isLoggedIn={isLoggedIn} userName={userName} />
+        <div className="page-content">
+          <Routes>
+            <Route element={<HomePage />} path="/" />
+            <Route element={<CatalogPage />} path="/shop/:section" />
+            <Route element={<CatalogPage />} path="/shop" />
+            <Route element={<ProductPage isLoggedIn={isLoggedIn} />} path="/products/:productId" />
+            <Route element={<CartPage isLoggedIn={isLoggedIn} />} path="/cart" />
+            <Route
+              element={
+                <ProtectedRoute session={session}>
+                  <WishlistPage isLoggedIn={isLoggedIn} />
+                </ProtectedRoute>
+              }
+              path="/wishlist"
+            />
+            <Route
+              element={
+                <ProtectedRoute session={session}>
+                  <CheckoutPage isLoggedIn={isLoggedIn} />
+                </ProtectedRoute>
+              }
+              path="/checkout"
+            />
+            <Route
+              element={
+                <ProtectedRoute session={session}>
+                  <AccountPage isLoggedIn={isLoggedIn} />
+                </ProtectedRoute>
+              }
+              path="/account"
+            />
+            <Route element={<LoginPage />} path="/login" />
+            <Route element={<SignupPage />} path="/signup" />
+            <Route element={<Navigate replace to="/" />} path="*" />
+          </Routes>
+        </div>
+        <SiteFooter />
+      </div>
       <SpeedInsights />
     </div>
   );
-}
+};
 
 export default App;
