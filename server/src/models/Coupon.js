@@ -120,7 +120,6 @@ const couponSchema = new mongoose.Schema(
         type: Boolean,
         default: false,
       },
-      membershipTiers: [String], // e.g., ["Gold", "Emerald"]
       specificUsers: [
         {
           type: mongoose.Schema.Types.ObjectId,
@@ -204,13 +203,6 @@ couponSchema.methods.canUserUse = function (userId, orderAmount, customerProfile
   // Check new users only
   if (this.eligibility.newUsersOnly && customerProfile?.stats.totalOrders > 0)
     return { valid: false, reason: "This coupon is only for new users" };
-
-  // Check membership tier
-  if (
-    this.eligibility.membershipTiers.length > 0 &&
-    !this.eligibility.membershipTiers.includes(customerProfile?.membership.tier)
-  )
-    return { valid: false, reason: "This coupon is not available for your membership tier" };
 
   // Check specific users
   if (

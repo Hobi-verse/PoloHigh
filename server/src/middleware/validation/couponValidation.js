@@ -188,18 +188,6 @@ exports.validateCreateCoupon = [
     .isBoolean()
     .withMessage("New users only must be a boolean"),
 
-  body("eligibility.membershipTiers")
-    .optional()
-    .isArray()
-    .withMessage("Membership tiers must be an array"),
-
-  body("eligibility.membershipTiers.*")
-    .optional()
-    .isString()
-    .withMessage("Each membership tier must be a string")
-    .isIn(["Bronze", "Silver", "Gold", "Emerald"])
-    .withMessage("Invalid membership tier"),
-
   body("eligibility.specificUsers")
     .optional()
     .isArray()
@@ -311,11 +299,6 @@ exports.validateUpdateCoupon = [
     .optional()
     .isBoolean()
     .withMessage("New users only must be a boolean"),
-
-  body("eligibility.membershipTiers")
-    .optional()
-    .isArray()
-    .withMessage("Membership tiers must be an array"),
 
   body("eligibility.specificUsers")
     .optional()

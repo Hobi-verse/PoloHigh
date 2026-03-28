@@ -56,8 +56,15 @@ const WishlistPage = ({ isLoggedIn }) => {
   const items = Array.isArray(wishlist?.items) ? wishlist.items : [];
 
   const moveToCart = async (item) => {
+    const itemId = item._id || item.id;
+    if (!itemId) {
+      setError("Unable to move item to cart.");
+      return;
+    }
+
     try {
-      await api.wishlist.moveToCart(item._id || item.id, { quantity: 1 });
+      await api.wishlist.moveToCart(itemId, { quantity: 1 });
+      setError("");
       await reloadWishlist();
     } catch (requestError) {
       setError(requestError?.message || "Unable to move item to cart.");
@@ -65,8 +72,15 @@ const WishlistPage = ({ isLoggedIn }) => {
   };
 
   const removeItem = async (item) => {
+    const itemId = item._id || item.id;
+    if (!itemId) {
+      setError("Unable to remove item.");
+      return;
+    }
+
     try {
-      await api.wishlist.removeItem(item._id || item.id);
+      await api.wishlist.removeItem(itemId);
+      setError("");
       await reloadWishlist();
     } catch (requestError) {
       setError(requestError?.message || "Unable to remove item.");
@@ -101,7 +115,7 @@ const WishlistPage = ({ isLoggedIn }) => {
         ) : (
           <div className="wishlist-grid">
             {items.map((item) => (
-              <article className="wishlist-card" key={item._id || item.id}>
+              <article className="wishlist-card" key={item._id || item.id || item.productId}>
                 <img
                   alt={item.title || "Wishlist product"}
                   src={item.imageUrl || "https://placehold.co/420x540/f2ece1/1d2a44?text=POLO+HIGH"}
@@ -109,14 +123,25 @@ const WishlistPage = ({ isLoggedIn }) => {
                 <div className="wishlist-card__content">
                   <h3>{item.title}</h3>
                   <p>{formatINR(Number(item.price || 0))}</p>
+                  <p className="catalog-footnote">
+                    {item.inStock === false ? "Out of stock" : "In stock"}
+                  </p>
                   <div className="wishlist-card__actions">
-                    <button className="button button--gold" onClick={() => moveToCart(item)} type="button">
+                    <button
+                      className="button button--gold"
+                      disabled={!item.variantSku || item.inStock === false}
+                      onClick={() => moveToCart(item)}
+                      type="button"
+                    >
                       Move to Cart
                     </button>
                     <button className="button button--text" onClick={() => removeItem(item)} type="button">
                       Remove
                     </button>
                   </div>
+                  {!item.variantSku ? (
+                    <p className="catalog-footnote">Select a product variant before moving to cart.</p>
+                  ) : null}
                 </div>
               </article>
             ))}

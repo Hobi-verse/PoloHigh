@@ -207,6 +207,7 @@ const orderSchema = new mongoose.Schema(
       actualDeliveryDate: Date,
       trackingNumber: String,
       courierService: String,
+      courierOrderId: String,
     },
 
     // Order timeline

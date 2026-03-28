@@ -159,13 +159,15 @@ wishlistSchema.methods.updateItemStock = async function () {
             product.basePrice;
         } else {
           item.inStock = false;
+          item.size = null;
+          item.color = null;
+          item.price = product.salePrice ?? product.basePrice;
         }
-        item.price = variant.priceOverride;
+      } else {
         item.inStock = product.totalStock > 0;
         item.size = null;
         item.color = null;
         item.price = product.salePrice ?? product.basePrice;
-        item.price = product.basePrice;
       }
     } else {
       item.inStock = false;

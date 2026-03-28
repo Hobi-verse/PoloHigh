@@ -3,6 +3,69 @@ const Cart = require("../models/Cart");
 const Address = require("../models/Address");
 const Product = require("../models/Product");
 const User = require("../models/User");
+const Coupon = require("../models/Coupon");
+const CustomerProfile = require("../models/CustomerProfile");
+
+const resolveVariantUnitPrice = (product, variant) => {
+  const candidateValues = [
+    variant?.priceOverride,
+    variant?.price,
+    product?.salePrice,
+    product?.basePrice,
+    product?.price,
+  ];
+
+  const numeric = candidateValues.find((value) =>
+    Number.isFinite(Number(value))
+  );
+
+  return Number(numeric ?? 0);
+};
+
+const isCouponApplicableToItems = (coupon, items) => {
+  if (!coupon || !Array.isArray(items) || !items.length) {
+    return true;
+  }
+
+  const applicableProductIds = (coupon.applicableProducts ?? [])
+    .map((id) => id?.toString?.())
+    .filter(Boolean);
+  const excludedProductIds = (coupon.excludedProducts ?? [])
+    .map((id) => id?.toString?.())
+    .filter(Boolean);
+  const applicableCategories = (coupon.applicableCategories ?? [])
+    .map((category) => category?.toString?.().toLowerCase?.())
+    .filter(Boolean);
+
+  if (applicableProductIds.length > 0) {
+    const hasApplicableProduct = items.some((item) =>
+      applicableProductIds.includes(item.productId)
+    );
+    if (!hasApplicableProduct) {
+      return false;
+    }
+  }
+
+  if (excludedProductIds.length > 0) {
+    const hasExcludedProduct = items.some((item) =>
+      excludedProductIds.includes(item.productId)
+    );
+    if (hasExcludedProduct) {
+      return false;
+    }
+  }
+
+  if (applicableCategories.length > 0) {
+    const hasApplicableCategory = items.some((item) =>
+      applicableCategories.includes((item.category || "").toLowerCase())
+    );
+    if (!hasApplicableCategory) {
+      return false;
+    }
+  }
+
+  return true;
+};
 
 /**
  * @desc    Create new order from cart
@@ -17,6 +80,7 @@ exports.createOrder = async (req, res) => {
       paymentMethod,
       paymentMethodId,
       customerNotes,
+      couponCode,
       useCartItems = true,
       items: providedItems, // For direct checkout (skip cart)
     } = req.body;
@@ -45,6 +109,7 @@ exports.createOrder = async (req, res) => {
 
     // 3. Get order items
     let orderItems = [];
+    const couponContextItems = [];
     let cart = null;
 
     if (useCartItems) {
@@ -58,8 +123,16 @@ exports.createOrder = async (req, res) => {
         });
       }
 
+      const activeCartItems = (cart.items || []).filter((item) => !item.savedForLater);
+      if (activeCartItems.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Cart is empty. Cannot create order.",
+        });
+      }
+
       // Build order items from cart
-      for (const cartItem of cart.items) {
+      for (const cartItem of activeCartItems) {
         const product = cartItem.productId;
 
         // Verify product exists and is active
@@ -83,15 +156,16 @@ exports.createOrder = async (req, res) => {
         }
 
         // Check stock
-        if (variant.stock < cartItem.quantity) {
+        const availableStock = Number(variant.stockLevel ?? variant.stock ?? 0);
+        if (availableStock < cartItem.quantity) {
           return res.status(400).json({
             success: false,
-            message: `Insufficient stock for ${product.title} (${variant.size}/${variant.color}). Only ${variant.stock} available.`,
+            message: `Insufficient stock for ${product.title} (${variant.size}/${variant.color?.name || variant.color}). Only ${availableStock} available.`,
           });
         }
 
         // Calculate item pricing
-        const unitPrice = variant.salePrice || variant.price;
+        const unitPrice = resolveVariantUnitPrice(product, variant);
         const subtotal = unitPrice * cartItem.quantity;
 
         orderItems.push({
@@ -99,12 +173,17 @@ exports.createOrder = async (req, res) => {
           variantSku: variant.sku,
           title: product.title,
           size: variant.size,
-          color: variant.color,
+          color: variant.color?.name || variant.color || "",
           unitPrice: unitPrice,
           quantity: cartItem.quantity,
           imageUrl: product.media && product.media[0] ? product.media[0].url : "",
           discount: 0, // TODO: Apply product-level discounts
           subtotal: subtotal,
+        });
+
+        couponContextItems.push({
+          productId: product._id?.toString?.(),
+          category: product.category || "",
         });
       }
     } else {
@@ -126,11 +205,57 @@ exports.createOrder = async (req, res) => {
 
     // 4. Calculate order pricing
     const subtotal = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
-    const shipping = subtotal >= 5000 ? 0 : 150; // Free shipping above ₹5000
-    const taxRate = 0.06; // 6% tax
-    const tax = Math.round(subtotal * taxRate);
-    const discount = 0; // TODO: Apply coupon discounts
-    const grandTotal = subtotal + shipping + tax - discount;
+    const shipping = 0;
+    const tax = 0;
+    let discount = 0;
+    let appliedCoupon = null;
+
+    if (couponCode && String(couponCode).trim()) {
+      const normalizedCouponCode = String(couponCode).trim().toUpperCase();
+      const coupon = await Coupon.findOne({ code: normalizedCouponCode });
+
+      if (!coupon) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid coupon code.",
+        });
+      }
+
+      const validityCheck = coupon.isValid();
+      if (!validityCheck.valid) {
+        return res.status(400).json({
+          success: false,
+          message: validityCheck.reason,
+        });
+      }
+
+      const customerProfile = await CustomerProfile.findOne({ userId });
+      const userEligibility = coupon.canUserUse(userId, subtotal, customerProfile);
+
+      if (!userEligibility.valid) {
+        return res.status(400).json({
+          success: false,
+          message: userEligibility.reason,
+        });
+      }
+
+      const couponApplicable = isCouponApplicableToItems(
+        coupon,
+        couponContextItems
+      );
+
+      if (!couponApplicable) {
+        return res.status(400).json({
+          success: false,
+          message: "This coupon is not applicable to items in your cart.",
+        });
+      }
+
+      discount = Number(coupon.calculateDiscount(subtotal) || 0);
+      appliedCoupon = coupon;
+    }
+
+    const grandTotal = Math.max(0, subtotal - discount);
 
     // 5. Generate unique order number
     const orderNumber = await Order.generateOrderNumber();
@@ -153,6 +278,15 @@ exports.createOrder = async (req, res) => {
         discount,
         grandTotal,
       },
+      coupon: appliedCoupon
+        ? {
+            couponId: appliedCoupon._id,
+            code: appliedCoupon.code,
+            discountType: appliedCoupon.discountType,
+            discountValue: appliedCoupon.discountValue,
+            discountApplied: discount,
+          }
+        : undefined,
       shipping: {
         recipient: shippingAddress.recipient,
         phone: shippingAddress.phone,
@@ -198,14 +332,19 @@ exports.createOrder = async (req, res) => {
 
     await order.save();
 
+    if (appliedCoupon) {
+      appliedCoupon.applyCoupon(userId, order._id, discount);
+      await appliedCoupon.save();
+    }
+
     // 7. Reduce product stock
     for (const item of orderItems) {
       await Product.updateOne(
         { _id: item.productId, "variants.sku": item.variantSku },
         {
           $inc: {
-            "variants.$.stock": -item.quantity,
-            totalSold: item.quantity,
+            "variants.$.stockLevel": -item.quantity,
+            totalStock: -item.quantity,
           },
         }
       );
@@ -213,8 +352,7 @@ exports.createOrder = async (req, res) => {
 
     // 8. Clear cart (if used)
     if (cart) {
-      cart.items = [];
-      cart.savedForLater = [];
+      cart.items = (cart.items || []).filter((item) => item.savedForLater);
       await cart.save();
     }
 
@@ -233,6 +371,7 @@ exports.createOrder = async (req, res) => {
           deliveryWindow: order.delivery.deliveryWindow,
           items: order.items,
           pricing: order.pricing,
+          coupon: order.coupon,
           shipping: order.shipping,
           payment: {
             method: order.payment.method,
@@ -346,6 +485,11 @@ exports.getOrders = async (req, res) => {
         status: order.payment.status,
         transactionId: order.payment.transactionId,
       },
+      delivery: {
+        trackingNumber: order.delivery?.trackingNumber || "",
+        courierService: order.delivery?.courierService || "",
+        courierOrderId: order.delivery?.courierOrderId || "",
+      },
     }));
 
     res.json({
@@ -452,7 +596,7 @@ exports.getOrderById = async (req, res) => {
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, trackingNumber, courierService } = req.body;
+    const { status, trackingNumber, courierService, courierOrderId } = req.body;
 
     const order = await Order.findById(id);
 
@@ -463,35 +607,51 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    // Validate status transition
-    const validTransitions = {
-      pending: ["confirmed", "cancelled"],
-      confirmed: ["processing", "cancelled"],
-      processing: ["packed", "cancelled"],
-      packed: ["shipped", "cancelled"],
-      shipped: ["out-for-delivery"],
-      "out-for-delivery": ["delivered"],
-      delivered: [],
-      cancelled: ["refunded"],
-      refunded: [],
-    };
+    const normalizedStatus = typeof status === "string" ? status.trim() : "";
+    const normalizedTrackingNumber =
+      typeof trackingNumber === "string" ? trackingNumber.trim() : "";
+    const normalizedCourierService =
+      typeof courierService === "string" ? courierService.trim() : "";
+    const normalizedCourierOrderId =
+      typeof courierOrderId === "string" ? courierOrderId.trim() : "";
 
-    if (!validTransitions[order.status].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: `Cannot transition from ${order.status} to ${status}`,
-      });
+    const hasStatusChange =
+      normalizedStatus.length > 0 && normalizedStatus !== order.status;
+
+    if (hasStatusChange) {
+      // Validate status transition
+      const validTransitions = {
+        pending: ["confirmed", "cancelled"],
+        confirmed: ["processing", "cancelled"],
+        processing: ["packed", "cancelled"],
+        packed: ["shipped", "cancelled"],
+        shipped: ["out-for-delivery"],
+        "out-for-delivery": ["delivered"],
+        delivered: [],
+        cancelled: ["refunded"],
+        refunded: [],
+      };
+
+      if (!validTransitions[order.status].includes(normalizedStatus)) {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot transition from ${order.status} to ${normalizedStatus}`,
+        });
+      }
+
+      // Update status using model method
+      order.updateStatus(normalizedStatus);
     }
-
-    // Update status using model method
-    order.updateStatus(status);
 
     // Add tracking info if provided
-    if (trackingNumber) {
-      order.delivery.trackingNumber = trackingNumber;
+    if (normalizedTrackingNumber) {
+      order.delivery.trackingNumber = normalizedTrackingNumber;
     }
-    if (courierService) {
-      order.delivery.courierService = courierService;
+    if (normalizedCourierService) {
+      order.delivery.courierService = normalizedCourierService;
+    }
+    if (normalizedCourierOrderId) {
+      order.delivery.courierOrderId = normalizedCourierOrderId;
     }
 
     await order.save();
@@ -506,6 +666,11 @@ exports.updateOrderStatus = async (req, res) => {
           status: order.status,
           timeline: order.timeline,
           delivery: order.delivery,
+          payment: {
+            method: order.payment?.method,
+            status: order.payment?.status,
+            transactionId: order.payment?.transactionId || "",
+          },
         },
       },
     });
@@ -712,6 +877,12 @@ exports.getAllOrders = async (req, res) => {
       payment: {
         method: order.payment.method,
         status: order.payment.status,
+        transactionId: order.payment.transactionId || "",
+      },
+      delivery: {
+        trackingNumber: order.delivery?.trackingNumber || "",
+        courierService: order.delivery?.courierService || "",
+        courierOrderId: order.delivery?.courierOrderId || "",
       },
     }));
 

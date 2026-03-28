@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { FiHeart, FiLogIn, FiLogOut, FiShoppingBag, FiUser } from "react-icons/fi";
 import { api } from "../../api/endpoints";
 import { clearAuthSession } from "../../utils/authStorage";
 
@@ -8,8 +9,6 @@ const PRIMARY_NAV = [
   { label: "Clothing", to: "/shop/men-clothing" },
   { label: "Fragrance", to: "/shop/perfumes" },
   { label: "Accessories", to: "/shop/accessories" },
-  { label: "Journal", to: "/shop/all?q=journal" },
-  { label: "The Atelier", to: "/shop/all?q=atelier" },
 ];
 
 const SiteHeader = ({ isLoggedIn, userName = "", onAuthChange }) => {
@@ -87,24 +86,55 @@ const SiteHeader = ({ isLoggedIn, userName = "", onAuthChange }) => {
         </nav>
 
         <div className="site-header__actions">
-          <NavLink className={({ isActive }) => `header-link${isActive ? " active" : ""}`} to="/wishlist">
-            Wishlist <span className="badge">{wishlistCount || ""}</span>
+          <NavLink
+            aria-label="Wishlist"
+            className={({ isActive }) => `header-action${isActive ? " active" : ""}`}
+            title="Wishlist"
+            to="/wishlist"
+          >
+            <FiHeart />
+            {wishlistCount > 0 ? <span className="header-action__badge">{wishlistCount}</span> : null}
           </NavLink>
-          <NavLink className={({ isActive }) => `header-link${isActive ? " active" : ""}`} to="/cart">
-            Cart <span className="badge">{cartCount || ""}</span>
+
+          <NavLink
+            aria-label="Cart"
+            className={({ isActive }) => `header-action${isActive ? " active" : ""}`}
+            title="Cart"
+            to="/cart"
+          >
+            <FiShoppingBag />
+            {cartCount > 0 ? <span className="header-action__badge">{cartCount}</span> : null}
           </NavLink>
+
           {isLoggedIn ? (
             <>
-              <NavLink className={({ isActive }) => `header-link${isActive ? " active" : ""}`} to="/account">
-                {userName ? userName.split(" ")[0] : "Account"}
+              <NavLink
+                aria-label="Profile"
+                className={({ isActive }) => `header-action${isActive ? " active" : ""}`}
+                title={userName ? `Profile (${userName})` : "Profile"}
+                to="/account"
+              >
+                <FiUser />
               </NavLink>
-              <button className="button button--text" onClick={handleLogout} type="button">
-                Logout
+
+              <button
+                aria-label="Logout"
+                className="header-action header-action--button"
+                onClick={handleLogout}
+                title="Logout"
+                type="button"
+              >
+                <FiLogOut />
               </button>
             </>
           ) : (
-            <NavLink className={({ isActive }) => `header-link${isActive ? " active" : ""}`} to="/login">
-              Login
+            <NavLink
+              aria-label="Login"
+              className={({ isActive }) => `header-action${isActive ? " active" : ""}`}
+              title="Login"
+              to="/login"
+            >
+              <FiLogIn />
             </NavLink>
           )}
         </div>

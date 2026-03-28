@@ -120,10 +120,6 @@ exports.validateCustomerSearch = [
     .trim()
     .isLength({ max: 120 })
     .withMessage("query cannot exceed 120 characters"),
-  query("membershipTier")
-    .optional()
-    .isIn(["Bronze", "Silver", "Gold", "Emerald", "Sapphire Elite"])
-    .withMessage("Invalid membership tier"),
   query("minOrders")
     .optional()
     .isInt({ min: 0 })

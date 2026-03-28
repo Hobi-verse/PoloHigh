@@ -4,7 +4,11 @@ import { formatINR } from "../../utils/currency";
 const getPrimaryImage = (product) => {
   const media = Array.isArray(product?.media) ? product.media : [];
   const primary = media.find((item) => item?.isPrimary) || media[0];
-  return primary?.url || "https://placehold.co/600x780/f2ece1/1d2a44?text=POLO+HIGH";
+  return (
+    primary?.url ||
+    product?.imageUrl ||
+    "https://placehold.co/600x780/f2ece1/1d2a44?text=POLO+HIGH"
+  );
 };
 
 const ProductCard = ({ product }) => {

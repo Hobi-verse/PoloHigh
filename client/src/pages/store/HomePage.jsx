@@ -10,23 +10,48 @@ const resolveProductsFromSearch = (response) => {
   return response?.data?.results || response?.results || [];
 };
 
+const resolveCategories = (response) => {
+  return response?.categories || response?.data?.categories || [];
+};
+
 const EMPTY_SECTION_PRODUCTS = Object.fromEntries(STORE_SECTIONS.map((section) => [section.slug, []]));
+const HERO_CATEGORY_BY_SLIDE = {
+  "autumn-edit": "clothing",
+  "private-fragrance": "perfumes",
+  "atelier-accessories": "accessories",
+};
 
 const HomePage = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [sectionProducts, setSectionProducts] = useState(EMPTY_SECTION_PRODUCTS);
+  const [heroCategories, setHeroCategories] = useState([]);
+
+  const heroSlides = useMemo(() => {
+    const categoriesBySlug = new Map(heroCategories.map((category) => [category.slug, category]));
+
+    return HERO_SLIDES.map((slide) => {
+      const heroCategory = categoriesBySlug.get(HERO_CATEGORY_BY_SLIDE[slide.id]);
+      const categoryHeroImage = heroCategory?.heroImage;
+
+      return {
+        ...slide,
+        imageUrl: categoryHeroImage?.url || slide.imageUrl,
+        imageAlt: categoryHeroImage?.alt || slide.eyebrow,
+      };
+    });
+  }, [heroCategories]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setActiveSlide((current) => (current + 1) % HERO_SLIDES.length);
+      setActiveSlide((current) => (current + 1) % heroSlides.length);
     }, 5500);
 
     return () => {
       window.clearInterval(timer);
     };
-  }, []);
+  }, [heroSlides.length]);
 
   useEffect(() => {
     let active = true;
@@ -36,26 +61,31 @@ const HomePage = () => {
         setLoading(true);
         setError("");
 
-        const entries = await Promise.all(
-          STORE_SECTIONS.map(async (section) => {
-            const searchPayload = await api.search.searchProducts({
-              category: section.searchCategory,
-              limit: 4,
-              sortBy: "relevance",
-            });
-            const products = resolveProductsFromSearch(searchPayload);
-            return [section.slug, products];
-          })
-        );
+        const [entries, categoryResponse] = await Promise.all([
+          Promise.all(
+            STORE_SECTIONS.map(async (section) => {
+              const searchPayload = await api.search.searchProducts({
+                category: section.searchCategory,
+                limit: 4,
+                sortBy: "relevance",
+              });
+              const products = resolveProductsFromSearch(searchPayload);
+              return [section.slug, products];
+            })
+          ),
+          api.categories.list().catch(() => null),
+        ]);
 
         if (!active) {
           return;
         }
 
         setSectionProducts(Object.fromEntries(entries));
+        setHeroCategories(resolveCategories(categoryResponse));
       } catch (requestError) {
         if (!active) return;
         setSectionProducts(EMPTY_SECTION_PRODUCTS);
+        setHeroCategories([]);
         setError(requestError?.message || "Unable to load products from backend.");
       } finally {
         if (active) {
@@ -81,17 +111,23 @@ const HomePage = () => {
     ].slice(0, 4);
   }, [sectionProducts]);
 
+  const fragranceFeatureImage =
+    fragranceFeature?.imageUrl ||
+    fragranceFeature?.media?.find((item) => item?.isPrimary)?.url ||
+    fragranceFeature?.media?.[0]?.url ||
+    FRAGRANCE_IMAGE;
+
   return (
     <main className="home-page">
       <section className="home-hero-shell">
         <div className="home-hero">
-          {HERO_SLIDES.map((slide, index) => (
+          {heroSlides.map((slide, index) => (
             <article
               aria-hidden={index !== activeSlide}
               className={`home-hero__slide${index === activeSlide ? " is-active" : ""}`}
               key={slide.id}
             >
-              <img alt={slide.eyebrow} src={slide.imageUrl} />
+              <img alt={slide.imageAlt} src={slide.imageUrl} />
               <div className="home-hero__overlay">
                 <p className="home-hero__eyebrow">{slide.eyebrow}</p>
                 <h1>{slide.title}</h1>
@@ -110,14 +146,14 @@ const HomePage = () => {
               aria-label="Previous slide"
               className="home-hero__arrow"
               onClick={() =>
-                setActiveSlide((current) => (current - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)
+                setActiveSlide((current) => (current - 1 + heroSlides.length) % heroSlides.length)
               }
               type="button"
             >
               Prev
             </button>
             <div className="home-hero__dots">
-              {HERO_SLIDES.map((slide, index) => (
+              {heroSlides.map((slide, index) => (
                 <button
                   aria-label={`Go to ${slide.eyebrow}`}
                   className={`home-hero__dot${index === activeSlide ? " is-active" : ""}`}
@@ -130,7 +166,7 @@ const HomePage = () => {
             <button
               aria-label="Next slide"
               className="home-hero__arrow"
-              onClick={() => setActiveSlide((current) => (current + 1) % HERO_SLIDES.length)}
+              onClick={() => setActiveSlide((current) => (current + 1) % heroSlides.length)}
               type="button"
             >
               Next
@@ -145,7 +181,7 @@ const HomePage = () => {
       {!loading ? (
         <div className="home-grid">
           <section className="feature-story">
-            <img alt={fragranceFeature?.title || "Signature fragrance"} src={FRAGRANCE_IMAGE} />
+            <img alt={fragranceFeature?.title || "Signature fragrance"} src={fragranceFeatureImage} />
             <div className="feature-story__content">
               <p className="feature-story__eyebrow">The Signature Fragrance</p>
               <h2>{fragranceFeature?.title || "Velvet Moss: An Indulgent Scent"}</h2>

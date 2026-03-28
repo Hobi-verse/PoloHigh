@@ -162,16 +162,6 @@ exports.getAvailableCoupons = async (req, res) => {
         continue;
       }
 
-      // Check membership tier
-      if (
-        (coupon.eligibility?.membershipTiers?.length ?? 0) > 0 &&
-        !coupon.eligibility.membershipTiers.includes(
-          customerProfile?.membership?.tier
-        )
-      ) {
-        continue;
-      }
-
       // Check specific users
       if (
         (coupon.eligibility?.specificUsers?.length ?? 0) > 0 &&

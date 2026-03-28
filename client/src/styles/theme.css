@@ -160,6 +160,11 @@ img {
   object-fit: contain;
 }
 
+.brand-mark__icon {
+  font-size: 2rem;
+  color: #2f61c0;
+}
+
 .brand-mark__text {
   font-family: "Cormorant Garamond", "Times New Roman", serif;
   font-size: 1.55rem;
@@ -194,6 +199,52 @@ img {
   display: flex;
   align-items: center;
   gap: 0.8rem;
+}
+
+.header-action {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #d7d0c2;
+  background: #fff;
+  color: #4e525f;
+}
+
+.header-action svg {
+  width: 17px;
+  height: 17px;
+}
+
+.header-action:hover,
+.header-action.active {
+  color: #202532;
+  border-color: #202532;
+  background: #f7f3ea;
+}
+
+.header-action--button {
+  padding: 0;
+  cursor: pointer;
+}
+
+.header-action__badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--brand-gold-strong);
+  color: #fff;
+  font-size: 0.58rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  padding-inline: 3px;
+  line-height: 1;
 }
 
 .header-link {
@@ -666,6 +717,7 @@ img {
 .summary-card textarea,
 .summary-card select,
 .address-form input,
+.address-form select,
 .coupon-form input,
 .product-select select {
   width: 100%;

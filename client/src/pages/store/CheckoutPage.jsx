@@ -5,6 +5,9 @@ import { ErrorState, LoadingState } from "../../components/ui/AsyncState";
 import { formatINR } from "../../utils/currency";
 
 const PAYMENT_METHODS = ["COD", "UPI", "Credit Card", "Debit Card", "Net Banking", "Wallet"];
+const getAddressId = (address) => address?._id || address?.id || "";
+const getRequestErrorMessage = (requestError, fallbackMessage) =>
+  requestError?.payload?.errors?.[0]?.message || requestError?.message || fallbackMessage;
 
 const CheckoutPage = ({ isLoggedIn }) => {
   const navigate = useNavigate();
@@ -17,6 +20,9 @@ const CheckoutPage = ({ isLoggedIn }) => {
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [customerNotes, setCustomerNotes] = useState("");
   const [cart, setCart] = useState({ items: [], totals: {} });
+  const [couponCode, setCouponCode] = useState("");
+  const [couponResult, setCouponResult] = useState(null);
+  const [couponLoading, setCouponLoading] = useState(false);
   const [newAddress, setNewAddress] = useState({
     recipient: "",
     phone: "",
@@ -28,7 +34,10 @@ const CheckoutPage = ({ isLoggedIn }) => {
     type: "home",
   });
 
+  const items = Array.isArray(cart?.items) ? cart.items : [];
+  const activeCartItems = items.filter((item) => !item.savedForLater);
   const subtotal = Number(cart?.totals?.subtotal || 0);
+  const discountAmount = Number(couponResult?.discountApplied || 0);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -56,10 +65,9 @@ const CheckoutPage = ({ isLoggedIn }) => {
 
         setAddresses(nextAddresses);
         setCart(nextCart);
+        const defaultAddress = nextAddresses.find((address) => address.isDefault);
         setSelectedAddressId(
-          nextAddresses.find((address) => address.isDefault)?._id ||
-            nextAddresses[0]?._id ||
-            ""
+          getAddressId(defaultAddress) || getAddressId(nextAddresses[0]) || ""
         );
       } catch (requestError) {
         if (active) {
@@ -80,21 +88,66 @@ const CheckoutPage = ({ isLoggedIn }) => {
   }, [isLoggedIn, navigate]);
 
   const payableAmount = useMemo(() => {
-    const shipping = subtotal >= 5000 ? 0 : 150;
-    const tax = Math.round(subtotal * 0.06);
-    return subtotal + shipping + tax;
-  }, [subtotal]);
+    return Math.max(0, subtotal - discountAmount);
+  }, [discountAmount, subtotal]);
+
+  const handleApplyCoupon = async (event) => {
+    event.preventDefault();
+    const normalizedCode = couponCode.trim();
+    if (!normalizedCode) {
+      setError("Enter a coupon code first.");
+      return;
+    }
+
+    if (!activeCartItems.length) {
+      setError("Add items to cart before applying a coupon.");
+      return;
+    }
+
+    try {
+      setCouponLoading(true);
+      setError("");
+      const response = await api.coupons.validate({
+        code: normalizedCode,
+        orderAmount: subtotal,
+        items: activeCartItems.map((item) => ({
+          productId: item.productId?._id || item.productId || item.productSlug || item.id,
+          quantity: Number(item.quantity || 1),
+          price: Number(item.price || 0),
+        })),
+      });
+
+      const appliedCoupon = response?.data || response;
+      setCouponResult(appliedCoupon);
+      setCouponCode(appliedCoupon?.code || normalizedCode.toUpperCase());
+      setSuccess(`Coupon ${appliedCoupon?.code || normalizedCode.toUpperCase()} applied.`);
+    } catch (requestError) {
+      setCouponResult(null);
+      setSuccess("");
+      setError(requestError?.message || "Unable to apply coupon.");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponCode("");
+    setCouponResult(null);
+    setSuccess("");
+    setError("");
+  };
 
   const createAddress = async (event) => {
     event.preventDefault();
     try {
       const response = await api.addresses.create(newAddress);
       const createdAddress = response?.data?.address || response?.address || response;
-      if (!createdAddress?._id) {
+      const createdAddressId = getAddressId(createdAddress);
+      if (!createdAddressId) {
         throw new Error("Address could not be created.");
       }
       setAddresses((prev) => [createdAddress, ...prev]);
-      setSelectedAddressId(createdAddress._id);
+      setSelectedAddressId(createdAddressId);
       setNewAddress({
         recipient: "",
         phone: "",
@@ -107,7 +160,7 @@ const CheckoutPage = ({ isLoggedIn }) => {
       });
       setError("");
     } catch (requestError) {
-      setError(requestError?.message || "Unable to create address.");
+      setError(getRequestErrorMessage(requestError, "Unable to create address."));
     }
   };
 
@@ -124,6 +177,7 @@ const CheckoutPage = ({ isLoggedIn }) => {
         addressId: selectedAddressId,
         paymentMethod,
         customerNotes,
+        couponCode: couponResult?.code || undefined,
       });
 
       const orderNumber =
@@ -164,11 +218,11 @@ const CheckoutPage = ({ isLoggedIn }) => {
             <h3>Delivery Address</h3>
             <div className="address-list">
               {addresses.map((address) => (
-                <label className="address-card" key={address._id || address.id}>
+                <label className="address-card" key={getAddressId(address)}>
                   <input
-                    checked={selectedAddressId === (address._id || address.id)}
+                    checked={selectedAddressId === getAddressId(address)}
                     name="address"
-                    onChange={() => setSelectedAddressId(address._id || address.id)}
+                    onChange={() => setSelectedAddressId(getAddressId(address))}
                     type="radio"
                   />
                   <div>
@@ -253,12 +307,39 @@ const CheckoutPage = ({ isLoggedIn }) => {
             </label>
 
             <p>Subtotal: <strong>{formatINR(subtotal)}</strong></p>
+            {discountAmount > 0 ? (
+              <p>
+                Discount{couponResult?.code ? ` (${couponResult.code})` : ""}:{" "}
+                <strong>-{formatINR(discountAmount)}</strong>
+              </p>
+            ) : null}
             <p>Payable: <strong>{formatINR(payableAmount)}</strong></p>
+
+            <form className="coupon-form" onSubmit={handleApplyCoupon}>
+              <input
+                onChange={(event) => setCouponCode(event.target.value)}
+                placeholder="Coupon code"
+                value={couponCode}
+              />
+              <button className="button button--outline" disabled={couponLoading} type="submit">
+                {couponLoading ? "Applying..." : "Apply"}
+              </button>
+            </form>
+            {couponResult ? (
+              <button className="button button--text" onClick={handleRemoveCoupon} type="button">
+                Remove Coupon
+              </button>
+            ) : null}
 
             {error ? <p className="inline-message inline-message--error">{error}</p> : null}
             {success ? <p className="inline-message">{success}</p> : null}
 
-            <button className="button button--gold" disabled={placingOrder} onClick={placeOrder} type="button">
+            <button
+              className="button button--gold"
+              disabled={placingOrder || !activeCartItems.length}
+              onClick={placeOrder}
+              type="button"
+            >
               {placingOrder ? "Placing order..." : "Place Order"}
             </button>
           </aside>

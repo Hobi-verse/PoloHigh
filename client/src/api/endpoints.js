@@ -25,7 +25,7 @@ export const productApi = {
 };
 
 export const categoryApi = {
-  list: () => apiRequest("/categories"),
+  list: (query) => apiRequest("/categories", { query }),
   getTree: () => apiRequest("/categories/tree"),
   getBySlug: (slug) => apiRequest(`/categories/${slug}`),
   getFilters: (slug) => apiRequest(`/categories/${slug}/filters`),
@@ -96,13 +96,6 @@ export const profileApi = {
   getSummary: () => apiRequest("/profile/summary"),
   updatePreferences: (payload) =>
     apiRequest("/profile/preferences", { method: "PATCH", body: payload }),
-  getMembership: () => apiRequest("/profile/membership"),
-  getRewards: () => apiRequest("/profile/rewards"),
-  redeemPoints: (payload) =>
-    apiRequest("/profile/rewards/redeem", { method: "POST", body: payload }),
-  getReferral: () => apiRequest("/profile/referral"),
-  applyReferral: (payload) =>
-    apiRequest("/profile/referral/apply", { method: "POST", body: payload }),
   getSecurity: () => apiRequest("/profile/security"),
   toggle2FA: (payload) => apiRequest("/profile/security/2fa", { method: "PATCH", body: payload }),
   addTrustedDevice: (payload) =>

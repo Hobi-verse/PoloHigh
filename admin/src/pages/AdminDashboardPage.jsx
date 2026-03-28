@@ -5,7 +5,9 @@ import { formatINR } from "../utils/currency";
 
 const ADMIN_TABS = [
   { id: "overview", label: "Overview" },
+  { id: "create", label: "Create" },
   { id: "products", label: "Products" },
+  { id: "coupons", label: "Coupons" },
   { id: "orders", label: "Orders" },
   { id: "customers", label: "Customers" },
   { id: "payments", label: "Payments" },
@@ -72,6 +74,77 @@ const INITIAL_PAYMENT_FILTERS = {
   q: "",
 };
 
+const HERO_SECTION_CONFIGS = [
+  {
+    slug: "clothing",
+    label: "Clothing Hero",
+    name: "Men Clothing",
+    description: "Tailored polos, structured jackets, and modern silhouettes.",
+    targetGender: "Men",
+    displayOrder: 1,
+  },
+  {
+    slug: "perfumes",
+    label: "Fragrance Hero",
+    name: "Perfumes",
+    description: "Signature scents crafted with rare notes and lasting character.",
+    targetGender: "Unisex",
+    displayOrder: 2,
+  },
+  {
+    slug: "accessories",
+    label: "Accessories Hero",
+    name: "Accessories",
+    description: "Belts, eyewear, and finishing details that define presence.",
+    targetGender: "Unisex",
+    displayOrder: 3,
+  },
+];
+
+const CREATE_VIEW_OPTIONS = [
+  { value: "product", label: "Product" },
+  { value: "hero", label: "Hero Section" },
+];
+
+const COUPON_FORM_INITIAL = {
+  code: "",
+  description: "",
+  discountType: "fixed",
+  discountValue: "0",
+  maxDiscount: "",
+  minOrderAmount: "0",
+  startDate: "",
+  endDate: "",
+  usageTotal: "",
+  usagePerUser: "1",
+  isActive: true,
+};
+
+const getDateTimeInputValue = (date) => {
+  const resolvedDate = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(resolvedDate.getTime())) {
+    return "";
+  }
+  const adjusted = new Date(resolvedDate.getTime() - resolvedDate.getTimezoneOffset() * 60000);
+  return adjusted.toISOString().slice(0, 16);
+};
+
+const buildCouponInitialForm = () => {
+  const now = new Date();
+  const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  return {
+    ...COUPON_FORM_INITIAL,
+    startDate: getDateTimeInputValue(now),
+    endDate: getDateTimeInputValue(weekFromNow),
+  };
+};
+
+const buildCouponCode = () =>
+  `PH-${Math.random().toString(36).slice(2, 6).toUpperCase()}-${Date.now()
+    .toString()
+    .slice(-4)}`;
+
 const slugify = (value = "") =>
   value
     .toLowerCase()
@@ -85,6 +158,13 @@ const resolveProducts = (response) => response?.products || response?.data?.prod
 const resolveOrders = (response) => response?.data?.orders || response?.orders || [];
 const resolveCustomers = (response) => response?.data?.results || [];
 const resolvePayments = (response) => response?.data?.records || [];
+const resolveCategories = (response) => response?.categories || response?.data?.categories || [];
+const resolveCoupons = (response) => {
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.coupons)) return response.coupons;
+  if (Array.isArray(response)) return response;
+  return [];
+};
 
 const getAllowedStatuses = (currentStatus) => [
   currentStatus,
@@ -101,8 +181,21 @@ const formatDateTime = (value) => {
 const getCategoryConfig = (category = "") =>
   PRODUCT_CATEGORY_OPTIONS[category] || PRODUCT_CATEGORY_OPTIONS.clothing;
 
+const buildHeroSectionDrafts = (categories = []) =>
+  HERO_SECTION_CONFIGS.map((section) => {
+    const category = categories.find((item) => item.slug === section.slug);
+    return {
+      ...section,
+      exists: Boolean(category),
+      isActive: category?.isActive ?? true,
+      imageUrl: category?.heroImage?.url || "",
+      alt: category?.heroImage?.alt || `${section.name} hero image`,
+    };
+  });
+
 const AdminDashboardPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const [createView, setCreateView] = useState("product");
 
   const [overview, setOverview] = useState(null);
   const [overviewLoading, setOverviewLoading] = useState(true);
@@ -116,6 +209,11 @@ const AdminDashboardPage = () => {
   const [productActionMessage, setProductActionMessage] = useState("");
   const [productActionError, setProductActionError] = useState("");
   const [productActionBusy, setProductActionBusy] = useState(false);
+  const [heroSections, setHeroSections] = useState(() => buildHeroSectionDrafts());
+  const [heroSectionsLoading, setHeroSectionsLoading] = useState(true);
+  const [heroActionMessage, setHeroActionMessage] = useState("");
+  const [heroActionError, setHeroActionError] = useState("");
+  const [heroActionBusyId, setHeroActionBusyId] = useState("");
 
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
@@ -134,6 +232,15 @@ const AdminDashboardPage = () => {
   const [paymentsLoading, setPaymentsLoading] = useState(true);
   const [paymentsError, setPaymentsError] = useState("");
   const [paymentFilters, setPaymentFilters] = useState(INITIAL_PAYMENT_FILTERS);
+
+  const [coupons, setCoupons] = useState([]);
+  const [couponsLoading, setCouponsLoading] = useState(true);
+  const [couponsError, setCouponsError] = useState("");
+  const [couponForm, setCouponForm] = useState(() => buildCouponInitialForm());
+  const [couponActionMessage, setCouponActionMessage] = useState("");
+  const [couponActionError, setCouponActionError] = useState("");
+  const [couponActionBusy, setCouponActionBusy] = useState(false);
+  const [couponActionBusyId, setCouponActionBusyId] = useState("");
 
   const loadOverview = useCallback(async () => {
     try {
@@ -223,13 +330,55 @@ const AdminDashboardPage = () => {
     }
   }, []);
 
+  const loadCoupons = useCallback(async () => {
+    try {
+      setCouponsLoading(true);
+      setCouponsError("");
+      const response = await api.coupons.listAllAdmin({
+        page: 1,
+        limit: 100,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      });
+      setCoupons(resolveCoupons(response));
+    } catch (requestError) {
+      setCouponsError(requestError?.message || "Unable to load coupons.");
+    } finally {
+      setCouponsLoading(false);
+    }
+  }, []);
+
+  const loadHeroSections = useCallback(async () => {
+    try {
+      setHeroSectionsLoading(true);
+      setHeroActionError("");
+      const response = await api.categories.list({ includeInactive: true });
+      setHeroSections(buildHeroSectionDrafts(resolveCategories(response)));
+    } catch (requestError) {
+      setHeroActionError(requestError?.message || "Unable to load hero section settings.");
+      setHeroSections(buildHeroSectionDrafts());
+    } finally {
+      setHeroSectionsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadOverview();
     loadProducts();
+    loadHeroSections();
     loadOrders();
     loadCustomers();
     loadPayments(INITIAL_PAYMENT_FILTERS);
-  }, [loadCustomers, loadOrders, loadOverview, loadPayments, loadProducts]);
+    loadCoupons();
+  }, [
+    loadCoupons,
+    loadCustomers,
+    loadHeroSections,
+    loadOrders,
+    loadOverview,
+    loadPayments,
+    loadProducts,
+  ]);
 
   const handleProductFormChange = (field, value) => {
     if (field === "title") {
@@ -367,6 +516,61 @@ const AdminDashboardPage = () => {
     }
   };
 
+  const handleHeroSectionChange = (slug, field, value) => {
+    setHeroSections((current) =>
+      current.map((section) =>
+        section.slug === slug
+          ? {
+            ...section,
+            [field]: value,
+          }
+          : section
+      )
+    );
+  };
+
+  const handleSaveHeroSection = async (slug) => {
+    const section = heroSections.find((item) => item.slug === slug);
+
+    if (!section) {
+      return;
+    }
+
+    try {
+      setHeroActionBusyId(slug);
+      setHeroActionMessage("");
+      setHeroActionError("");
+
+      const payload = {
+        slug: section.slug,
+        name: section.name,
+        description: section.description,
+        targetGender: section.targetGender,
+        displayOrder: section.displayOrder,
+        isActive: true,
+        heroImage: section.imageUrl.trim()
+          ? {
+            url: section.imageUrl.trim(),
+            alt: section.alt.trim() || `${section.name} hero image`,
+          }
+          : null,
+      };
+
+      if (section.exists) {
+        await api.categories.update(section.slug, payload);
+      } else {
+        await api.categories.create(payload);
+      }
+
+      setHeroActionMessage(`${section.label} saved successfully.`);
+      await loadHeroSections();
+    } catch (requestError) {
+      setHeroActionError(requestError?.message || "Unable to save hero section.");
+    } finally {
+      setHeroActionBusyId("");
+    }
+  };
+
   const handleDeleteProduct = async (product) => {
     try {
       setProductActionBusy(true);
@@ -394,8 +598,17 @@ const AdminDashboardPage = () => {
 
   const handleUpdateOrder = async (order) => {
     const draft = orderDrafts[order.id] || {};
-    const nextStatus = draft.status || order.status;
-    if (nextStatus === order.status) {
+    const nextStatus = (draft.status || "").trim();
+    const trackingNumber = draft.trackingNumber;
+    const courierService = draft.courierService;
+    const courierOrderId = draft.courierOrderId;
+
+    const hasStatusChange = nextStatus && nextStatus !== order.status;
+    const hasTrackingUpdate = trackingNumber !== undefined;
+    const hasCourierServiceUpdate = courierService !== undefined;
+    const hasCourierOrderIdUpdate = courierOrderId !== undefined;
+
+    if (!hasStatusChange && !hasTrackingUpdate && !hasCourierServiceUpdate && !hasCourierOrderIdUpdate) {
       return;
     }
 
@@ -405,12 +618,17 @@ const AdminDashboardPage = () => {
       setOrderActionMessage("");
 
       await api.orders.updateStatus(order.id, {
-        status: nextStatus,
-        trackingNumber: draft.trackingNumber || undefined,
-        courierService: draft.courierService || undefined,
+        status: hasStatusChange ? nextStatus : undefined,
+        trackingNumber: hasTrackingUpdate ? String(trackingNumber || "").trim() : undefined,
+        courierService: hasCourierServiceUpdate ? String(courierService || "").trim() : undefined,
+        courierOrderId: hasCourierOrderIdUpdate ? String(courierOrderId || "").trim() : undefined,
       });
 
-      setOrderActionMessage(`Order ${order.orderNumber} moved to ${nextStatus}.`);
+      setOrderActionMessage(
+        hasStatusChange
+          ? `Order ${order.orderNumber} moved to ${nextStatus}.`
+          : `Order ${order.orderNumber} shipment details updated.`
+      );
       await Promise.all([loadOrders(), loadOverview(), loadPayments(paymentFilters)]);
     } catch (requestError) {
       setOrderActionError(requestError?.message || "Unable to update order status.");
@@ -452,6 +670,102 @@ const AdminDashboardPage = () => {
   const handlePaymentFilterSubmit = async (event) => {
     event.preventDefault();
     await loadPayments(paymentFilters);
+  };
+
+  const handleCouponFormChange = (field, value) => {
+    setCouponForm((current) => {
+      if (field === "discountType") {
+        return {
+          ...current,
+          discountType: value,
+          discountValue: value === "freeShipping" ? "0" : current.discountValue,
+        };
+      }
+
+      return {
+        ...current,
+        [field]: value,
+      };
+    });
+  };
+
+  const handleGenerateCouponCode = () => {
+    setCouponForm((current) => ({
+      ...current,
+      code: buildCouponCode(),
+    }));
+  };
+
+  const handleCreateCoupon = async (event) => {
+    event.preventDefault();
+
+    try {
+      setCouponActionBusy(true);
+      setCouponActionError("");
+      setCouponActionMessage("");
+
+      const normalizedCode = couponForm.code.trim().toUpperCase();
+      if (!normalizedCode) {
+        throw new Error("Coupon code is required.");
+      }
+
+      const startDate = new Date(couponForm.startDate);
+      const endDate = new Date(couponForm.endDate);
+
+      if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+        throw new Error("Please provide valid coupon start and end date.");
+      }
+
+      if (endDate <= startDate) {
+        throw new Error("End date must be after start date.");
+      }
+
+      const payload = {
+        code: normalizedCode,
+        description: couponForm.description.trim(),
+        discountType: couponForm.discountType,
+        discountValue:
+          couponForm.discountType === "freeShipping"
+            ? 0
+            : Number(couponForm.discountValue || 0),
+        maxDiscount: couponForm.maxDiscount ? Number(couponForm.maxDiscount) : undefined,
+        minOrderAmount: Number(couponForm.minOrderAmount || 0),
+        validity: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        },
+        usageLimit: {
+          total: couponForm.usageTotal ? Number(couponForm.usageTotal) : undefined,
+          perUser: Number(couponForm.usagePerUser || 1),
+        },
+        isActive: couponForm.isActive,
+        campaignType: "promotional",
+      };
+
+      await api.coupons.create(payload);
+      setCouponActionMessage(`Coupon ${normalizedCode} created successfully.`);
+      setCouponForm(buildCouponInitialForm());
+      await loadCoupons();
+    } catch (requestError) {
+      setCouponActionError(requestError?.message || "Unable to create coupon.");
+    } finally {
+      setCouponActionBusy(false);
+    }
+  };
+
+  const handleToggleCouponStatus = async (couponId) => {
+    try {
+      setCouponActionBusyId(couponId);
+      setCouponActionError("");
+      setCouponActionMessage("");
+      await api.coupons.toggleStatus(couponId);
+      setCouponActionMessage("Coupon status updated.");
+      await loadCoupons();
+    } catch (requestError) {
+      setCouponActionError(requestError?.message || "Unable to update coupon status.");
+    } finally {
+      setCouponActionBusyId("");
+    }
   };
 
   const metrics = overview?.metrics || {};
@@ -576,170 +890,425 @@ const AdminDashboardPage = () => {
         </section>
       ) : null}
 
-      {activeTab === "products" ? (
+      {activeTab === "create" ? (
         <section className="admin-panel">
-          <div className="admin-layout">
+          <div className="admin-stack">
             <section className="admin-card">
-              <h2>Create Product</h2>
-              <form className="admin-form-grid" onSubmit={handleCreateProduct}>
-                <input
-                  onChange={(event) => handleProductFormChange("title", event.target.value)}
-                  placeholder="Product title"
-                  required
-                  value={productForm.title}
-                />
-                <input
-                  onChange={(event) => handleProductFormChange("slug", event.target.value)}
-                  placeholder="Slug"
-                  required
-                  value={productForm.slug}
-                />
-                <select
-                  onChange={(event) => handleProductFormChange("category", event.target.value)}
-                  value={productForm.category}
-                >
-                  <option value="clothing">Clothing</option>
-                  <option value="perfumes">Perfumes</option>
-                  <option value="accessories">Accessories</option>
+              <div className="admin-create-selector">
+                <p className="admin-head__eyebrow">Create Mode</p>
+                <select onChange={(event) => setCreateView(event.target.value)} value={createView}>
+                  {CREATE_VIEW_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
-                <select
-                  onChange={(event) => handleProductFormChange("targetGender", event.target.value)}
-                  value={productForm.targetGender}
-                >
-                  <option value="Men">Men</option>
-                  <option value="Women">Women</option>
-                  <option value="Unisex">Unisex</option>
-                  <option value="Kids">Kids</option>
-                </select>
-                <input
-                  min="1"
-                  onChange={(event) => handleProductFormChange("basePrice", event.target.value)}
-                  placeholder="Base price"
-                  required
-                  type="number"
-                  value={productForm.basePrice}
-                />
-                <input
-                  min="0"
-                  onChange={(event) => handleProductFormChange("mrp", event.target.value)}
-                  placeholder="MRP"
-                  type="number"
-                  value={productForm.mrp}
-                />
-                <input
-                  onChange={(event) => handleProductFormChange("imageUrl", event.target.value)}
-                  placeholder="Primary image URL"
-                  value={productForm.imageUrl}
-                />
-                <input
-                  onChange={(event) => handleProductFormChange("size", event.target.value)}
-                  placeholder={categoryConfig.sizePlaceholder}
-                  required
-                  value={productForm.size}
-                />
-                {showColorInputs ? (
-                  <>
-                    <input
-                      onChange={(event) => handleProductFormChange("colorName", event.target.value)}
-                      placeholder="Color name"
-                      required
-                      value={productForm.colorName}
-                    />
-                    <input
-                      onChange={(event) => handleProductFormChange("colorHex", event.target.value)}
-                      placeholder="Color hex"
-                      value={productForm.colorHex}
-                    />
-                  </>
-                ) : null}
-                {isPerfumeCategory ? (
-                  <input
-                    onChange={(event) => handleProductFormChange("scentFamily", event.target.value)}
-                    placeholder="Scent family (e.g., woody, citrus)"
-                    value={productForm.scentFamily}
-                  />
-                ) : null}
-                <input
-                  min="0"
-                  onChange={(event) => handleProductFormChange("stockLevel", event.target.value)}
-                  placeholder="Stock level"
-                  type="number"
-                  value={productForm.stockLevel}
-                />
-                <textarea
-                  onChange={(event) => handleProductFormChange("description", event.target.value)}
-                  placeholder="Product description"
-                  rows={4}
-                  value={productForm.description}
-                />
-                <button className="button button--gold" disabled={productActionBusy} type="submit">
-                  {productActionBusy ? "Saving..." : "Create Product"}
-                </button>
-              </form>
-              {productActionError ? (
-                <p className="inline-message inline-message--error">{productActionError}</p>
-              ) : null}
-              {productActionMessage ? <p className="inline-message">{productActionMessage}</p> : null}
+              </div>
             </section>
 
-            <section className="admin-card">
-              <div className="admin-card__head">
-                <h2>Products</h2>
-                <button className="button button--outline" onClick={loadProducts} type="button">
-                  Refresh
-                </button>
-              </div>
-              {productsLoading ? <LoadingState message="Loading products..." /> : null}
-              {!productsLoading && productsError ? <ErrorState message={productsError} /> : null}
-              {!productsLoading && !productsError ? (
-                <div className="admin-table-wrap">
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th>Title</th>
-                        <th>Category</th>
-                        <th>Price</th>
-                        <th>Stock</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+            {createView === "hero" ? (
+              <section className="admin-card">
+                <div className="admin-card__head">
+                  <h2>Hero Section Images</h2>
+                  <button className="button button--outline" onClick={loadHeroSections} type="button">
+                    Refresh
+                  </button>
+                </div>
+                {heroSectionsLoading ? <LoadingState message="Loading hero image settings..." /> : null}
+                {!heroSectionsLoading ? (
+                  <div className="admin-hero-grid">
+                    {heroSections.map((section) => (
+                      <article className="admin-hero-card" key={section.slug}>
+                        <div className="admin-hero-card__head">
+                          <div>
+                            <h3>{section.label}</h3>
+                            <p>{section.slug}</p>
+                          </div>
+                          <button
+                            className="button button--gold"
+                            disabled={heroActionBusyId === section.slug}
+                            onClick={() => handleSaveHeroSection(section.slug)}
+                            type="button"
+                          >
+                            {heroActionBusyId === section.slug ? "Saving..." : "Save"}
+                          </button>
+                        </div>
+                        <div className="admin-form-grid">
+                          <input
+                            onChange={(event) =>
+                              handleHeroSectionChange(section.slug, "imageUrl", event.target.value)
+                            }
+                            placeholder="Hero image URL"
+                            value={section.imageUrl}
+                          />
+                          <input
+                            onChange={(event) =>
+                              handleHeroSectionChange(section.slug, "alt", event.target.value)
+                            }
+                            placeholder="Hero image alt text"
+                            value={section.alt}
+                          />
+                        </div>
+                        <div className="admin-hero-preview">
+                          {section.imageUrl ? (
+                            <img alt={section.alt || section.label} src={section.imageUrl} />
+                          ) : (
+                            <p className="catalog-footnote">No hero image saved yet.</p>
+                          )}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ) : null}
+                {heroActionError ? (
+                  <p className="inline-message inline-message--error">{heroActionError}</p>
+                ) : null}
+                {heroActionMessage ? <p className="inline-message">{heroActionMessage}</p> : null}
+              </section>
+            ) : null}
+
+            {createView === "product" ? (
+              <section className="admin-card">
+                <h2>Create Product</h2>
+                <form className="admin-form-grid" onSubmit={handleCreateProduct}>
+                  <input
+                    onChange={(event) => handleProductFormChange("title", event.target.value)}
+                    placeholder="Product title"
+                    required
+                    value={productForm.title}
+                  />
+                  <input
+                    onChange={(event) => handleProductFormChange("slug", event.target.value)}
+                    placeholder="Slug"
+                    required
+                    value={productForm.slug}
+                  />
+                  <select
+                    onChange={(event) => handleProductFormChange("category", event.target.value)}
+                    value={productForm.category}
+                  >
+                    <option value="clothing">Clothing</option>
+                    <option value="perfumes">Perfumes</option>
+                    <option value="accessories">Accessories</option>
+                  </select>
+                  <select
+                    onChange={(event) => handleProductFormChange("targetGender", event.target.value)}
+                    value={productForm.targetGender}
+                  >
+                    <option value="Men">Men</option>
+                    <option value="Women">Women</option>
+                    <option value="Unisex">Unisex</option>
+                    <option value="Kids">Kids</option>
+                  </select>
+                  <input
+                    min="1"
+                    onChange={(event) => handleProductFormChange("basePrice", event.target.value)}
+                    placeholder="Base price"
+                    required
+                    type="number"
+                    value={productForm.basePrice}
+                  />
+                  <input
+                    min="0"
+                    onChange={(event) => handleProductFormChange("mrp", event.target.value)}
+                    placeholder="MRP"
+                    type="number"
+                    value={productForm.mrp}
+                  />
+                  <input
+                    onChange={(event) => handleProductFormChange("imageUrl", event.target.value)}
+                    placeholder="Primary image URL"
+                    value={productForm.imageUrl}
+                  />
+                  <input
+                    onChange={(event) => handleProductFormChange("size", event.target.value)}
+                    placeholder={categoryConfig.sizePlaceholder}
+                    required
+                    value={productForm.size}
+                  />
+                  {showColorInputs ? (
+                    <>
+                      <input
+                        onChange={(event) => handleProductFormChange("colorName", event.target.value)}
+                        placeholder="Color name"
+                        required
+                        value={productForm.colorName}
+                      />
+                      <input
+                        onChange={(event) => handleProductFormChange("colorHex", event.target.value)}
+                        placeholder="Color hex"
+                        value={productForm.colorHex}
+                      />
+                    </>
+                  ) : null}
+                  {isPerfumeCategory ? (
+                    <input
+                      onChange={(event) => handleProductFormChange("scentFamily", event.target.value)}
+                      placeholder="Scent family (e.g., woody, citrus)"
+                      value={productForm.scentFamily}
+                    />
+                  ) : null}
+                  <input
+                    min="0"
+                    onChange={(event) => handleProductFormChange("stockLevel", event.target.value)}
+                    placeholder="Stock level"
+                    type="number"
+                    value={productForm.stockLevel}
+                  />
+                  <textarea
+                    onChange={(event) => handleProductFormChange("description", event.target.value)}
+                    placeholder="Product description"
+                    rows={4}
+                    value={productForm.description}
+                  />
+                  <button className="button button--gold" disabled={productActionBusy} type="submit">
+                    {productActionBusy ? "Saving..." : "Create Product"}
+                  </button>
+                </form>
+                {productActionError ? (
+                  <p className="inline-message inline-message--error">{productActionError}</p>
+                ) : null}
+                {productActionMessage ? <p className="inline-message">{productActionMessage}</p> : null}
+              </section>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {activeTab === "products" ? (
+        <section className="admin-panel">
+          <section className="admin-card">
+            <div className="admin-card__head">
+              <h2>Products</h2>
+              <button className="button button--outline" onClick={loadProducts} type="button">
+                Refresh
+              </button>
+            </div>
+            {productsLoading ? <LoadingState message="Loading products..." /> : null}
+            {!productsLoading && productsError ? <ErrorState message={productsError} /> : null}
+            {!productsLoading && !productsError ? (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Title</th>
+                      <th>Category</th>
+                      <th>Price</th>
+                      <th>Stock</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {products.map((product) => (
+                      <tr key={product.id || product.slug}>
+                        <td>{product.title}</td>
+                        <td>{product.category}</td>
+                        <td>{formatINR(product.price || product.basePrice || 0)}</td>
+                        <td>{product.totalStock || 0}</td>
+                        <td>{product.isActive ? "Active" : "Inactive"}</td>
+                        <td>
+                          <div className="admin-inline-actions">
+                            <button
+                              className="button button--outline"
+                              disabled={productActionBusy}
+                              onClick={() => handleToggleProductStatus(product)}
+                              type="button"
+                            >
+                              {product.isActive ? "Deactivate" : "Activate"}
+                            </button>
+                            <button
+                              className="button button--text"
+                              disabled={productActionBusy}
+                              onClick={() => handleDeleteProduct(product)}
+                              type="button"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {products.map((product) => (
-                        <tr key={product.id || product.slug}>
-                          <td>{product.title}</td>
-                          <td>{product.category}</td>
-                          <td>{formatINR(product.price || product.basePrice || 0)}</td>
-                          <td>{product.totalStock || 0}</td>
-                          <td>{product.isActive ? "Active" : "Inactive"}</td>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+          </section>
+        </section>
+      ) : null}
+
+      {activeTab === "coupons" ? (
+        <section className="admin-panel">
+          <section className="admin-card">
+            <div className="admin-card__head">
+              <h2>Generate Coupon</h2>
+              <button className="button button--outline" onClick={handleGenerateCouponCode} type="button">
+                Generate Code
+              </button>
+            </div>
+
+            <form className="admin-form-grid" onSubmit={handleCreateCoupon}>
+              <input
+                onChange={(event) => handleCouponFormChange("code", event.target.value)}
+                placeholder="Coupon code"
+                required
+                value={couponForm.code}
+              />
+              <input
+                onChange={(event) => handleCouponFormChange("description", event.target.value)}
+                placeholder="Description"
+                value={couponForm.description}
+              />
+              <select
+                onChange={(event) => handleCouponFormChange("discountType", event.target.value)}
+                value={couponForm.discountType}
+              >
+                <option value="fixed">Fixed discount</option>
+                <option value="percentage">Percentage discount</option>
+                <option value="freeShipping">Free shipping</option>
+              </select>
+              <input
+                min="0"
+                onChange={(event) => handleCouponFormChange("discountValue", event.target.value)}
+                placeholder="Discount value"
+                type="number"
+                value={couponForm.discountValue}
+              />
+              <input
+                min="0"
+                onChange={(event) => handleCouponFormChange("maxDiscount", event.target.value)}
+                placeholder="Max discount (for % type)"
+                type="number"
+                value={couponForm.maxDiscount}
+              />
+              <input
+                min="0"
+                onChange={(event) => handleCouponFormChange("minOrderAmount", event.target.value)}
+                placeholder="Minimum order amount"
+                type="number"
+                value={couponForm.minOrderAmount}
+              />
+              <input
+                onChange={(event) => handleCouponFormChange("startDate", event.target.value)}
+                required
+                type="datetime-local"
+                value={couponForm.startDate}
+              />
+              <input
+                onChange={(event) => handleCouponFormChange("endDate", event.target.value)}
+                required
+                type="datetime-local"
+                value={couponForm.endDate}
+              />
+              <input
+                min="1"
+                onChange={(event) => handleCouponFormChange("usageTotal", event.target.value)}
+                placeholder="Total usage limit (blank = unlimited)"
+                type="number"
+                value={couponForm.usageTotal}
+              />
+              <input
+                min="1"
+                onChange={(event) => handleCouponFormChange("usagePerUser", event.target.value)}
+                placeholder="Usage per user"
+                type="number"
+                value={couponForm.usagePerUser}
+              />
+              <label className="admin-checkbox">
+                <input
+                  checked={couponForm.isActive}
+                  onChange={(event) => handleCouponFormChange("isActive", event.target.checked)}
+                  type="checkbox"
+                />
+                Coupon is active
+              </label>
+              <button className="button button--gold" disabled={couponActionBusy} type="submit">
+                {couponActionBusy ? "Creating..." : "Create Coupon"}
+              </button>
+            </form>
+
+            {couponActionError ? (
+              <p className="inline-message inline-message--error">{couponActionError}</p>
+            ) : null}
+            {couponActionMessage ? <p className="inline-message">{couponActionMessage}</p> : null}
+          </section>
+
+          <section className="admin-card">
+            <div className="admin-card__head">
+              <h2>All Coupons</h2>
+              <button className="button button--outline" onClick={loadCoupons} type="button">
+                Refresh
+              </button>
+            </div>
+
+            {couponsLoading ? <LoadingState message="Loading coupons..." /> : null}
+            {!couponsLoading && couponsError ? <ErrorState message={couponsError} /> : null}
+
+            {!couponsLoading && !couponsError ? (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Code</th>
+                      <th>Discount</th>
+                      <th>Minimum</th>
+                      <th>Validity</th>
+                      <th>Usage</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {coupons.map((coupon) => {
+                      const couponId = coupon._id || coupon.id;
+                      const usageLimit = coupon?.usageLimit?.total;
+                      const usageText =
+                        usageLimit === null || usageLimit === undefined
+                          ? `${coupon.usageCount || 0} / Unlimited`
+                          : `${coupon.usageCount || 0} / ${usageLimit}`;
+
+                      return (
+                        <tr key={couponId}>
                           <td>
-                            <div className="admin-inline-actions">
-                              <button
-                                className="button button--outline"
-                                disabled={productActionBusy}
-                                onClick={() => handleToggleProductStatus(product)}
-                                type="button"
-                              >
-                                {product.isActive ? "Deactivate" : "Activate"}
-                              </button>
-                              <button
-                                className="button button--text"
-                                disabled={productActionBusy}
-                                onClick={() => handleDeleteProduct(product)}
-                                type="button"
-                              >
-                                Delete
-                              </button>
-                            </div>
+                            <p className="admin-code-cell">{coupon.code}</p>
+                            <small>{coupon.description || "-"}</small>
+                          </td>
+                          <td>
+                            {coupon.discountType === "percentage"
+                              ? `${coupon.discountValue}%`
+                              : coupon.discountType === "fixed"
+                                ? formatINR(coupon.discountValue || 0)
+                                : "Free shipping"}
+                          </td>
+                          <td>{formatINR(coupon.minOrderAmount || 0)}</td>
+                          <td>
+                            <p>{formatDateTime(coupon?.validity?.startDate)}</p>
+                            <small>{formatDateTime(coupon?.validity?.endDate)}</small>
+                          </td>
+                          <td>{usageText}</td>
+                          <td>{coupon.isCurrentlyActive ? "Active" : "Inactive"}</td>
+                          <td>
+                            <button
+                              className="button button--outline"
+                              disabled={couponActionBusyId === couponId}
+                              onClick={() => handleToggleCouponStatus(couponId)}
+                              type="button"
+                            >
+                              {couponActionBusyId === couponId
+                                ? "Updating..."
+                                : coupon.isActive
+                                  ? "Deactivate"
+                                  : "Activate"}
+                            </button>
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : null}
-            </section>
-          </div>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+          </section>
         </section>
       ) : null}
 
@@ -774,6 +1343,27 @@ const AdminDashboardPage = () => {
                       const draft = orderDrafts[order.id] || {};
                       const selectedStatus = draft.status || order.status;
                       const allowedStatuses = getAllowedStatuses(order.status);
+                      const draftTrackingNumber =
+                        draft.trackingNumber ?? order.delivery?.trackingNumber ?? "";
+                      const draftCourierService =
+                        draft.courierService ?? order.delivery?.courierService ?? "";
+                      const draftCourierOrderId =
+                        draft.courierOrderId ?? order.delivery?.courierOrderId ?? "";
+                      const hasStatusChange = selectedStatus !== order.status;
+                      const hasTrackingChange =
+                        (draft.trackingNumber ?? order.delivery?.trackingNumber ?? "") !==
+                        (order.delivery?.trackingNumber ?? "");
+                      const hasCourierServiceChange =
+                        (draft.courierService ?? order.delivery?.courierService ?? "") !==
+                        (order.delivery?.courierService ?? "");
+                      const hasCourierOrderIdChange =
+                        (draft.courierOrderId ?? order.delivery?.courierOrderId ?? "") !==
+                        (order.delivery?.courierOrderId ?? "");
+                      const hasOrderUpdateChanges =
+                        hasStatusChange ||
+                        hasTrackingChange ||
+                        hasCourierServiceChange ||
+                        hasCourierOrderIdChange;
 
                       return (
                         <tr key={order.id}>
@@ -789,6 +1379,9 @@ const AdminDashboardPage = () => {
                           <td>
                             <p>{order.payment?.status || "pending"}</p>
                             <small>{order.payment?.method || "N/A"}</small>
+                            {order.payment?.transactionId ? (
+                              <small>Txn: {order.payment.transactionId}</small>
+                            ) : null}
                           </td>
                           <td>{formatINR(order.pricing?.grandTotal || 0)}</td>
                           <td>
@@ -810,26 +1403,33 @@ const AdminDashboardPage = () => {
                                   handleOrderDraftChange(order.id, "trackingNumber", event.target.value)
                                 }
                                 placeholder="Tracking no."
-                                value={draft.trackingNumber || ""}
+                                value={draftTrackingNumber}
                               />
                               <input
                                 onChange={(event) =>
                                   handleOrderDraftChange(order.id, "courierService", event.target.value)
                                 }
-                                placeholder="Courier"
-                                value={draft.courierService || ""}
+                                placeholder="Courier service"
+                                value={draftCourierService}
+                              />
+                              <input
+                                onChange={(event) =>
+                                  handleOrderDraftChange(order.id, "courierOrderId", event.target.value)
+                                }
+                                placeholder="Courier order ID"
+                                value={draftCourierOrderId}
                               />
                               <input
                                 onChange={(event) =>
                                   handleOrderDraftChange(order.id, "transactionId", event.target.value)
                                 }
-                                placeholder="Transaction ID"
-                                value={draft.transactionId || ""}
+                                placeholder="Transaction ID (payment)"
+                                value={draft.transactionId ?? order.payment?.transactionId ?? ""}
                               />
                               <div className="admin-inline-actions">
                                 <button
                                   className="button button--outline"
-                                  disabled={orderActionBusyId === order.id || selectedStatus === order.status}
+                                  disabled={orderActionBusyId === order.id || !hasOrderUpdateChanges}
                                   onClick={() => handleUpdateOrder(order)}
                                   type="button"
                                 >
@@ -885,7 +1485,6 @@ const AdminDashboardPage = () => {
                     <tr>
                       <th>Name</th>
                       <th>Contact</th>
-                      <th>Tier</th>
                       <th>Orders</th>
                       <th>Total Spent</th>
                       <th>Verified</th>
@@ -899,7 +1498,6 @@ const AdminDashboardPage = () => {
                           <p>{customer.email || "-"}</p>
                           <small>{customer.phone || "-"}</small>
                         </td>
-                        <td>{customer.membershipTier || "Bronze"}</td>
                         <td>{customer.totalOrders || 0}</td>
                         <td>{formatINR(customer.totalSpent || 0)}</td>
                         <td>{customer.isVerified ? "Yes" : "No"}</td>
@@ -997,4 +1595,3 @@ const AdminDashboardPage = () => {
 };
 
 export default AdminDashboardPage;
-

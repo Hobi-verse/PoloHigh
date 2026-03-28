@@ -528,7 +528,6 @@ exports.searchCustomers = async (req, res) => {
 
     const {
       q = "",
-      membershipTier,
       minOrders,
       maxOrders,
       page = 1,
@@ -573,10 +572,6 @@ exports.searchCustomers = async (req, res) => {
       );
     }
 
-    if (membershipTier) {
-      matchConditions.push({ "membership.tier": membershipTier });
-    }
-
     if (minOrders || maxOrders) {
       const ordersFilter = {};
       if (minOrders) {
@@ -614,9 +609,7 @@ exports.searchCustomers = async (req, res) => {
       $project: {
         _id: 1,
         userId: 1,
-        membership: 1,
         stats: 1,
-        rewards: 1,
         updatedAt: 1,
         createdAt: 1,
         user: {
@@ -639,19 +632,9 @@ exports.searchCustomers = async (req, res) => {
       $count: "total",
     });
 
-    const [customers, totalCountResult, tierBuckets] = await Promise.all([
+    const [customers, totalCountResult] = await Promise.all([
       CustomerProfile.aggregate(pipeline),
       CustomerProfile.aggregate(countPipeline),
-      CustomerProfile.aggregate([
-        {
-          $group: {
-            _id: "$membership.tier",
-            count: { $sum: 1 },
-            totalSpent: { $sum: "$stats.totalSpent" },
-          },
-        },
-        { $sort: { totalSpent: -1 } },
-      ]),
     ]);
 
     const total = totalCountResult[0]?.total || 0;
@@ -662,11 +645,8 @@ exports.searchCustomers = async (req, res) => {
       name: customer.user.fullName,
       email: customer.user.email,
       phone: customer.user.mobileNumber,
-      membershipTier: customer.membership?.tier,
       totalOrders: customer.stats?.totalOrders || 0,
       totalSpent: customer.stats?.totalSpent || 0,
-      rewardPoints: customer.rewards?.rewardPoints || 0,
-      walletBalance: customer.rewards?.walletBalance || 0,
       lastUpdated: customer.updatedAt,
       userCreatedAt: customer.user.createdAt,
       isVerified: customer.user.isVerified,
@@ -679,11 +659,6 @@ exports.searchCustomers = async (req, res) => {
       data: {
         query: trimmedQuery,
         results: formattedCustomers,
-        tierDistribution: tierBuckets.map((bucket) => ({
-          tier: bucket._id,
-          count: bucket.count,
-          totalSpent: bucket.totalSpent,
-        })),
       },
     });
   } catch (error) {

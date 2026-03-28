@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../api/endpoints";
 import { ErrorState, LoadingState } from "../../components/ui/AsyncState";
@@ -12,9 +12,7 @@ const CartPage = ({ isLoggedIn }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [couponCode, setCouponCode] = useState("");
   const [cart, setCart] = useState({ items: [], totals: {} });
-  const [couponResult, setCouponResult] = useState(null);
 
   const reloadCart = async () => {
     const response = await api.cart.get();
@@ -56,19 +54,20 @@ const CartPage = ({ isLoggedIn }) => {
   }, [isLoggedIn, navigate]);
 
   const items = Array.isArray(cart?.items) ? cart.items : [];
+  const activeItems = items.filter((item) => !item.savedForLater);
+  const savedItems = items.filter((item) => item.savedForLater);
   const totals = cart?.totals || {};
   const subtotal = Number(totals.subtotal || 0);
 
-  const orderAmount = useMemo(() => {
-    if (couponResult?.coupon?.finalAmount) {
-      return Number(couponResult.coupon.finalAmount);
-    }
-    return subtotal;
-  }, [couponResult, subtotal]);
-
   const handleQuantityChange = async (itemId, quantity) => {
+    if (!itemId) {
+      setError("Unable to update quantity.");
+      return;
+    }
+
     try {
       await api.cart.updateItem(itemId, { quantity });
+      setError("");
       await reloadCart();
     } catch (requestError) {
       setError(requestError?.message || "Unable to update quantity.");
@@ -76,31 +75,47 @@ const CartPage = ({ isLoggedIn }) => {
   };
 
   const handleRemoveItem = async (itemId) => {
+    if (!itemId) {
+      setError("Unable to remove item.");
+      return;
+    }
+
     try {
       await api.cart.removeItem(itemId);
+      setError("");
       await reloadCart();
     } catch (requestError) {
       setError(requestError?.message || "Unable to remove item.");
     }
   };
 
-  const handleApplyCoupon = async (event) => {
-    event.preventDefault();
+  const handleSaveForLater = async (itemId) => {
+    if (!itemId) {
+      setError("Unable to save item for later.");
+      return;
+    }
+
     try {
-      const payload = await api.coupons.validate({
-        code: couponCode.trim(),
-        orderAmount: subtotal,
-        items: items.map((item) => ({
-          productId: item.productId?._id || item.productId || item.productSlug || item.id,
-          quantity: item.quantity || 1,
-          price: item.price || 0,
-        })),
-      });
-      setCouponResult(payload?.data || payload);
+      await api.cart.saveForLater(itemId);
       setError("");
+      await reloadCart();
     } catch (requestError) {
-      setCouponResult(null);
-      setError(requestError?.message || "Unable to apply coupon.");
+      setError(requestError?.message || "Unable to save item for later.");
+    }
+  };
+
+  const handleMoveBackToCart = async (itemId) => {
+    if (!itemId) {
+      setError("Unable to move item to cart.");
+      return;
+    }
+
+    try {
+      await api.cart.moveToCart(itemId);
+      setError("");
+      await reloadCart();
+    } catch (requestError) {
+      setError(requestError?.message || "Unable to move item to cart.");
     }
   };
 
@@ -108,7 +123,7 @@ const CartPage = ({ isLoggedIn }) => {
     return <LoadingState message="Loading your cart..." />;
   }
 
-  if (error && !items.length) {
+  if (error && !activeItems.length && !savedItems.length) {
     return <ErrorState message={error} />;
   }
 
@@ -122,7 +137,7 @@ const CartPage = ({ isLoggedIn }) => {
           </div>
         </div>
 
-        {!items.length ? (
+        {!activeItems.length && !savedItems.length ? (
           <div className="state-box">
             <p>Your cart is empty.</p>
             <Link className="button button--gold" to="/shop/all">
@@ -132,7 +147,7 @@ const CartPage = ({ isLoggedIn }) => {
         ) : (
           <div className="cart-layout">
             <div className="cart-list">
-              {items.map((item) => (
+              {activeItems.length ? activeItems.map((item) => (
                 <article className="cart-item" key={item._id || item.id}>
                   <img
                     alt={item.title || "Cart product"}
@@ -159,6 +174,13 @@ const CartPage = ({ isLoggedIn }) => {
                         </select>
                       </label>
                       <button
+                        className="button button--outline"
+                        onClick={() => handleSaveForLater(item._id || item.id)}
+                        type="button"
+                      >
+                        Save for Later
+                      </button>
+                      <button
                         className="button button--text"
                         onClick={() => handleRemoveItem(item._id || item.id)}
                         type="button"
@@ -168,30 +190,63 @@ const CartPage = ({ isLoggedIn }) => {
                     </div>
                   </div>
                 </article>
-              ))}
+              )) : <p className="catalog-footnote">No active items in cart.</p>}
+
+              {savedItems.length ? (
+                <section className="section-block">
+                  <div className="section-block__header">
+                    <div>
+                      <p className="section-block__eyebrow">Saved for later</p>
+                      <h2>Move back anytime</h2>
+                    </div>
+                  </div>
+                  <div className="cart-list">
+                    {savedItems.map((item) => (
+                      <article className="cart-item" key={item._id || item.id}>
+                        <img
+                          alt={item.title || "Saved cart product"}
+                          src={item.imageUrl || "https://placehold.co/280x360/f2ece1/1d2a44?text=POLO+HIGH"}
+                        />
+                        <div className="cart-item__content">
+                          <h3>{item.title}</h3>
+                          <p>{item.size || "Standard"} • {item.color || "Default"}</p>
+                          <p>{formatINR(Number(item.price || 0))}</p>
+                          <div className="cart-item__actions">
+                            <button
+                              className="button button--outline"
+                              onClick={() => handleMoveBackToCart(item._id || item.id)}
+                              type="button"
+                            >
+                              Move to Cart
+                            </button>
+                            <button
+                              className="button button--text"
+                              onClick={() => handleRemoveItem(item._id || item.id)}
+                              type="button"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
             </div>
 
             <aside className="summary-card">
               <h3>Order Summary</h3>
               <p>Subtotal: <strong>{formatINR(subtotal)}</strong></p>
-              <p>Total Items: <strong>{totals.itemCount || items.length}</strong></p>
-              {couponResult?.discountApplied ? (
-                <p>Discount: <strong>-{formatINR(couponResult.discountApplied)}</strong></p>
-              ) : null}
-              <p className="summary-total">Payable: {formatINR(orderAmount)}</p>
+              <p>Total Items: <strong>{totals.itemCount || activeItems.length}</strong></p>
+              <p className="summary-total">Payable: {formatINR(subtotal)}</p>
 
-              <form className="coupon-form" onSubmit={handleApplyCoupon}>
-                <input
-                  onChange={(event) => setCouponCode(event.target.value)}
-                  placeholder="Coupon code"
-                  value={couponCode}
-                />
-                <button className="button button--outline" type="submit">
-                  Apply
-                </button>
-              </form>
-
-              <button className="button button--gold" onClick={() => navigate("/checkout")} type="button">
+              <button
+                className="button button--gold"
+                disabled={!activeItems.length}
+                onClick={() => navigate("/checkout")}
+                type="button"
+              >
                 Proceed to Checkout
               </button>
             </aside>

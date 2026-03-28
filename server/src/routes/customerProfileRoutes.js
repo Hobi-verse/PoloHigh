@@ -5,11 +5,6 @@ const {
   getAccountSummary,
   updateProfile,
   updatePreferences,
-  getMembership,
-  getRewards,
-  redeemPoints,
-  getReferral,
-  applyReferral,
   getSecurity,
   toggle2FA,
   addTrustedDevice,
@@ -19,8 +14,6 @@ const { protect } = require("../middleware/authMiddleware");
 const {
   validateUpdateProfile,
   validateUpdatePreferences,
-  validateRedeemPoints,
-  validateApplyReferral,
   validateToggle2FA,
   validateAddDevice,
   validateDeviceId,
@@ -68,55 +61,6 @@ router.patch(
   validateUpdatePreferences,
   updatePreferences
 );
-
-// ============================================
-// MEMBERSHIP ROUTES
-// ============================================
-
-/**
- * @route   GET /api/profile/membership
- * @desc    Get membership tier and benefits
- * @access  Private
- */
-router.get("/membership", protect, getMembership);
-
-// ============================================
-// REWARDS & WALLET ROUTES
-// ============================================
-
-/**
- * @route   GET /api/profile/rewards
- * @desc    Get reward points and wallet balance
- * @access  Private
- */
-router.get("/rewards", protect, getRewards);
-
-/**
- * @route   POST /api/profile/rewards/redeem
- * @desc    Redeem reward points to wallet
- * @access  Private
- * @body    { points }
- */
-router.post("/rewards/redeem", protect, validateRedeemPoints, redeemPoints);
-
-// ============================================
-// REFERRAL ROUTES
-// ============================================
-
-/**
- * @route   GET /api/profile/referral
- * @desc    Get referral code and statistics
- * @access  Private
- */
-router.get("/referral", protect, getReferral);
-
-/**
- * @route   POST /api/profile/referral/apply
- * @desc    Apply referral code (for new users)
- * @access  Private
- * @body    { referralCode }
- */
-router.post("/referral/apply", protect, validateApplyReferral, applyReferral);
 
 // ============================================
 // SECURITY ROUTES

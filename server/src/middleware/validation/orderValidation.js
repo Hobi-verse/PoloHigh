@@ -42,6 +42,14 @@ exports.validateCreateOrder = [
     .isLength({ max: 500 })
     .withMessage("Customer notes cannot exceed 500 characters"),
 
+  body("couponCode")
+    .optional()
+    .isString()
+    .withMessage("Coupon code must be a string")
+    .trim()
+    .isLength({ min: 3, max: 50 })
+    .withMessage("Coupon code must be between 3 and 50 characters"),
+
   body("useCartItems")
     .optional()
     .isBoolean()
@@ -89,8 +97,7 @@ exports.validateCreateOrder = [
  */
 exports.validateUpdateOrderStatus = [
   body("status")
-    .notEmpty()
-    .withMessage("Status is required")
+    .optional()
     .isString()
     .withMessage("Status must be a string")
     .isIn([
@@ -119,6 +126,31 @@ exports.validateUpdateOrderStatus = [
     .withMessage("Courier service must be a string")
     .isLength({ max: 100 })
     .withMessage("Courier service cannot exceed 100 characters"),
+
+  body("courierOrderId")
+    .optional()
+    .isString()
+    .withMessage("Courier order ID must be a string")
+    .isLength({ min: 3, max: 100 })
+    .withMessage("Courier order ID must be between 3 and 100 characters"),
+
+  body().custom((value) => {
+    const hasStatus = typeof value?.status === "string" && value.status.trim().length > 0;
+    const hasTracking =
+      typeof value?.trackingNumber === "string" && value.trackingNumber.trim().length > 0;
+    const hasCourierService =
+      typeof value?.courierService === "string" && value.courierService.trim().length > 0;
+    const hasCourierOrderId =
+      typeof value?.courierOrderId === "string" && value.courierOrderId.trim().length > 0;
+
+    if (!hasStatus && !hasTracking && !hasCourierService && !hasCourierOrderId) {
+      throw new Error(
+        "Provide at least one field to update: status, trackingNumber, courierService, or courierOrderId"
+      );
+    }
+
+    return true;
+  }),
 
   // Middleware to check validation results
   (req, res, next) => {
